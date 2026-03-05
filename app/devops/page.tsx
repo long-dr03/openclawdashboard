@@ -261,8 +261,8 @@ export default function DevOpsPage() {
                 <div className="bg-[#16181e] border border-white/5 rounded-xl p-5">
                     <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center"><HardDrive size={16} className="mr-2 text-emerald-400" /><span className="font-bold text-white text-sm">Disk</span></div>
-                        <span className={`text-lg font-bold font-mono ${(systemStats?.disk.usagePercent || 0) > 90 ? 'text-red-400' : 'text-emerald-400'}`}>
-                            {systemStats?.disk.usagePercent || 0}%
+                        <span className={`text-lg font-bold font-mono ${(systemStats?.disk?.usagePercent || 0) > 90 ? 'text-red-400' : 'text-emerald-400'}`}>
+                            {systemStats?.disk?.usagePercent || 0}%
                         </span>
                     </div>
                     <GaugeBar value={systemStats?.disk.usagePercent || 0} label="Usage" unit="%" color="bg-emerald-500" max={`${systemStats?.disk.total || 0} GB`} />
