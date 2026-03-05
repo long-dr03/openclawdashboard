@@ -369,15 +369,15 @@ export default function DashboardPage() {
                     {systemStats && (
                         <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-white/5">
                             <div className="text-center">
-                                <p className="text-xs font-bold text-white">{systemStats.cpu.usage}%</p>
+                                <p className="text-xs font-bold text-white">{systemStats?.cpu?.usage || 0}%</p>
                                 <p className="text-[10px] text-slate-500">CPU</p>
                             </div>
                             <div className="text-center">
-                                <p className="text-xs font-bold text-white">{systemStats.ram.usagePercent}%</p>
+                                <p className="text-xs font-bold text-white">{systemStats?.ram?.usagePercent || 0}%</p>
                                 <p className="text-[10px] text-slate-500">RAM</p>
                             </div>
                             <div className="text-center">
-                                <p className="text-xs font-bold text-white">{systemStats.disk.usagePercent}%</p>
+                                <p className="text-xs font-bold text-white">{systemStats?.disk?.usagePercent || 0}%</p>
                                 <p className="text-[10px] text-slate-500">Disk</p>
                             </div>
                         </div>

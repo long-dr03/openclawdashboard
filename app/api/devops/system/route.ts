@@ -8,7 +8,7 @@ const execAsync = promisify(exec);
 
 export async function GET(req: Request) {
     try {
-        // 1. Try proxy first
+        // 1. Try proxy first (for Vercel)
         const proxyResponse = await proxyToAgent(req, '/api/devops/system');
         if (proxyResponse) return proxyResponse;
 
@@ -18,14 +18,15 @@ export async function GET(req: Request) {
         const freeMem = os.freemem();
         const memUsage = ((totalMem - freeMem) / totalMem) * 100;
 
+        // Aligning with Frontend expectations: using 'ram' and 'usagePercent'
         return NextResponse.json({
             cpu: {
                 usage: Math.round(cpuUsage * 100) / 100,
                 cores: os.cpus().length,
                 model: os.cpus()[0].model,
             },
-            memory: {
-                usage: Math.round(memUsage * 100) / 100,
+            ram: {
+                usagePercent: Math.round(memUsage * 100) / 100,
                 total: Math.round(totalMem / (1024 * 1024 * 1024) * 100) / 100,
                 free: Math.round(freeMem / (1024 * 1024 * 1024) * 100) / 100,
             },
