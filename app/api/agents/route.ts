@@ -3,7 +3,30 @@ import { proxyToAgent } from '@/utils/proxy';
 import fs from 'fs';
 import path from 'path';
 
-const CEO_DIR = process.env.OPENCLAW_CONFIG_DIR || path.resolve(process.cwd(), '..');
+// Helper to find the CEO directory on VPS
+function getCEODir() {
+    // 1. Priority: Explicitly set via Environment Variable
+    if (process.env.OPENCLAW_CONFIG_DIR) {
+        return process.env.OPENCLAW_CONFIG_DIR;
+    }
+
+    // 2. Fallback: Check common relative locations
+    const possiblePaths = [
+        path.resolve(process.cwd(), '..'), // Inside openclaw-multi
+        path.resolve(process.cwd(), '../openclaw-multi/ceo'), // Beside openclaw-multi
+        path.resolve(process.cwd(), '../../openclaw-multi/ceo'), // Deeper
+    ];
+
+    for (const p of possiblePaths) {
+        if (fs.existsSync(path.join(p, 'config.json'))) {
+            return p;
+        }
+    }
+
+    return path.resolve(process.cwd(), '..'); // Default fallback
+}
+
+const CEO_DIR = getCEODir();
 const CONFIG_PATH = path.join(CEO_DIR, 'config.json');
 const STATE_DIR = path.join(CEO_DIR, 'state');
 
@@ -57,8 +80,11 @@ export async function GET(req: Request) {
         const proxyResponse = await proxyToAgent(req, '/api/agents');
         if (proxyResponse) return proxyResponse;
 
-        // 2. Fallback to local (for local dev)
+        // 2. Local logic (for VPS)
+        console.log('[API /agents] Using CEO_DIR:', CEO_DIR);
+
         if (!fs.existsSync(CONFIG_PATH)) {
+            console.error('[API /agents] Config not found at:', CONFIG_PATH);
             return NextResponse.json([]);
         }
 

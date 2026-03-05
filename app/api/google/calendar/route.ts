@@ -1,16 +1,21 @@
 import { NextResponse } from 'next/server';
+import { proxyToAgent } from '@/utils/proxy';
 import { getOAuthClient } from '@/utils/google';
 import { google } from 'googleapis';
 
-export async function GET() {
+export async function GET(req: Request) {
     try {
+        // 1. Try proxy first (for Vercel)
+        const proxyResponse = await proxyToAgent(req, '/api/google/calendar');
+        if (proxyResponse) return proxyResponse;
+
+        // 2. Local logic (for VPS)
         const auth = getOAuthClient();
         if (!auth) {
             return NextResponse.json({ error: 'Google integration not configured' }, { status: 400 });
         }
 
         const calendar = google.calendar({ version: 'v3', auth });
-
         const now = new Date();
         const endOfDay = new Date();
         endOfDay.setHours(23, 59, 59, 999);
@@ -37,7 +42,7 @@ export async function GET() {
                 title: event.summary || '(No Title)',
                 time,
                 link: event.htmlLink,
-                type: 'meeting', // default
+                type: 'meeting',
             };
         });
 

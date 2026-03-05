@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server';
+import { proxyToAgent } from '@/utils/proxy';
 import { getOAuthClient } from '@/utils/google';
 import { google } from 'googleapis';
 
-export async function GET() {
+export async function GET(req: Request) {
     try {
+        // 1. Try proxy first (for Vercel)
+        const proxyResponse = await proxyToAgent(req, '/api/google/gmail');
+        if (proxyResponse) return proxyResponse;
+
+        // 2. Local logic (for VPS)
         const auth = getOAuthClient();
         if (!auth) {
             return NextResponse.json({ error: 'Google integration not configured' }, { status: 400 });
@@ -11,52 +17,46 @@ export async function GET() {
 
         const gmail = google.gmail({ version: 'v1', auth });
 
-        // List messages
         const res = await gmail.users.messages.list({
             userId: 'me',
-            maxResults: 5,
-            q: 'in:inbox',
+            maxResults: 10,
+            q: 'is:unread',
         });
 
+        const emails = [];
         const messages = res.data.messages || [];
 
-        // Fetch details for each message
-        const emails = await Promise.all(messages.map(async (msg) => {
-            const detail = await gmail.users.messages.get({
+        for (const msg of messages) {
+            const details = await gmail.users.messages.get({
                 userId: 'me',
                 id: msg.id!,
                 format: 'metadata',
                 metadataHeaders: ['From', 'Subject', 'Date'],
             });
 
-            const headers = detail.data.payload?.headers || [];
+            const headers = details.data.payload?.headers || [];
+            const from = headers.find(h => h.name === 'From')?.value || 'Unknown Sender';
             const subject = headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
-            const from = headers.find(h => h.name === 'From')?.value || 'Unknown';
-            const date = headers.find(h => h.name === 'Date')?.value || '';
+            const dateStr = headers.find(h => h.name === 'Date')?.value || '';
 
-            // Basic date formatting
-            let time = '';
-            try {
-                const d = new Date(date);
+            let time = 'Recent';
+            if (dateStr) {
+                const d = new Date(dateStr);
                 time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            } catch {
-                time = date;
             }
 
-            return {
+            emails.push({
                 id: msg.id,
-                from: from.replace(/<.*>/, '').trim(), // clean name
+                from: from.split('<')[0].trim(),
                 subject,
                 time,
-                read: !detail.data.labelIds?.includes('UNREAD'),
-                snippet: detail.data.snippet,
-            };
-        }));
+                isUnread: true,
+            });
+        }
 
         return NextResponse.json(emails);
     } catch (e: any) {
         console.error('Gmail API Error:', e);
-        // Return empty list on error instead of 500 to keep UI alive
         return NextResponse.json({ error: e.message, emails: [] });
     }
 }
