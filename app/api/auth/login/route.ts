@@ -6,8 +6,8 @@ export async function POST(req: Request) {
   try {
     const { username, password } = await req.json();
 
-    const envUser = process.env.DASHBOARD_USER || 'admin';
-    const envPass = process.env.DASHBOARD_PASS || 'admin';
+    const envUser = process.env.AUTH_USER || process.env.DASHBOARD_USER || 'admin';
+    const envPass = process.env.AUTH_PASS || process.env.DASHBOARD_PASS || 'admin';
 
     if (username === envUser && password === envPass) {
       const token = await createToken({ username });
