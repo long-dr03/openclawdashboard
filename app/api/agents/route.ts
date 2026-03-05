@@ -3,110 +3,89 @@ import { proxyToAgent } from '@/utils/proxy';
 import fs from 'fs';
 import path from 'path';
 
-// Helper to find the CEO directory on VPS
-function getCEODir() {
-    // 1. Priority: Explicitly set via Environment Variable
-    if (process.env.OPENCLAW_CONFIG_DIR) {
-        return process.env.OPENCLAW_CONFIG_DIR;
-    }
-
-    // 2. Fallback: Check common relative locations
-    const possiblePaths = [
-        path.resolve(process.cwd(), '..'), // Inside openclaw-multi
-        path.resolve(process.cwd(), '../openclaw-multi/ceo'), // Beside openclaw-multi
-        path.resolve(process.cwd(), '../../openclaw-multi/ceo'), // Deeper
-    ];
-
-    for (const p of possiblePaths) {
-        if (fs.existsSync(path.join(p, 'config.json'))) {
-            return p;
-        }
-    }
-
-    return path.resolve(process.cwd(), '..'); // Default fallback
-}
-
-const CEO_DIR = getCEODir();
-const CONFIG_PATH = path.join(CEO_DIR, 'config.json');
-const STATE_DIR = path.join(CEO_DIR, 'state');
-
-function readSessionData(agentId: string) {
-    try {
-        const dirs = [
-            path.join(STATE_DIR, 'agents', agentId, 'sessions'),
-            path.join(STATE_DIR, 'agents', 'main', 'sessions'),
-        ];
-
-        for (const dir of dirs) {
-            const sessFile = path.join(dir, 'sessions.json');
-            if (fs.existsSync(sessFile)) {
-                const raw = fs.readFileSync(sessFile, 'utf-8');
-                const sessions = JSON.parse(raw);
-
-                let latest: any = null;
-                let latestTime = 0;
-
-                for (const [, sess] of Object.entries(sessions) as [string, any][]) {
-                    if (sess.updatedAt && sess.updatedAt > latestTime) {
-                        latestTime = sess.updatedAt;
-                        latest = sess;
-                    }
-                }
-
-                if (latest) {
-                    return {
-                        sessionId: latest.sessionId,
-                        model: latest.model || null,
-                        modelProvider: latest.modelProvider || null,
-                        inputTokens: latest.inputTokens || 0,
-                        outputTokens: latest.outputTokens || 0,
-                        totalTokens: latest.totalTokens || 0,
-                        updatedAt: latest.updatedAt || null,
-                        lastChannel: latest.lastChannel || latest.origin?.provider || null,
-                        chatType: latest.chatType || latest.origin?.chatType || null,
-                    };
-                }
-            }
-        }
-    } catch (e: any) {
-        console.warn(`[API /agents] Session read error for ${agentId}:`, e.message);
-    }
-    return null;
-}
-
 export async function GET(req: Request) {
     try {
-        // 1. Try proxy first (for Vercel)
+        // 1. CHẾ ĐỘ VERCEL (PROXY): Gửi yêu cầu về VPS qua Cloudflare Tunnel
         const proxyResponse = await proxyToAgent(req, '/api/agents');
         if (proxyResponse) return proxyResponse;
 
-        // 2. Local logic (for VPS)
-        console.log('[API /agents] Using CEO_DIR:', CEO_DIR);
+        // 2. CHẾ ĐỘ LOCAL (TRÊN VPS): Tự tìm và đọc file cấu hình
+        const getCEODir = () => {
+            // Ưu tiên biến môi trường nếu có
+            if (process.env.OPENCLAW_CONFIG_DIR) return process.env.OPENCLAW_CONFIG_DIR;
+            
+            // Các đường dẫn khả thi dựa trên cấu trúc bạn cung cấp
+            const possible = [
+                '/home/admin/openclaw-multi/ceo',                 // Đường dẫn tuyệt đối trên VPS admin
+                path.resolve(process.cwd(), '../openclaw-multi/ceo'), // Ngang hàng với repo dashboard
+                path.resolve(process.cwd(), '..'),                 // Trường hợp chạy bên trong folder ceo
+                '/home/agent/openclaw-multi/ceo',                 // Dự phòng cho user agent
+            ];
+            
+            for (const p of possible) {
+                if (fs.existsSync(path.join(p, 'config.json'))) return p;
+            }
+            return possible[0];
+        };
+
+        const CEO_DIR = getCEODir();
+        const CONFIG_PATH = path.join(CEO_DIR, 'config.json');
+        const STATE_DIR = path.join(CEO_DIR, 'state');
+
+        console.log('[API /agents] Scanning for config at:', CONFIG_PATH);
 
         if (!fs.existsSync(CONFIG_PATH)) {
-            console.error('[API /agents] Config not found at:', CONFIG_PATH);
-            return NextResponse.json([]);
+            return NextResponse.json({ 
+                error: "Config not found", 
+                tried: CONFIG_PATH,
+                msg: "Dashboard không tìm thấy file config.json của OpenClaw."
+            }, { status: 404 });
         }
 
-        const configRaw = fs.readFileSync(CONFIG_PATH, 'utf-8');
-        const config = JSON.parse(configRaw);
+        const config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
         const rawAgents = config.agents?.list || [];
+
+        // Logic đọc session để biết trạng thái hoạt động (giữ nguyên như cũ)
+        const readSessionData = (agentId: string) => {
+            try {
+                const dirs = [
+                    path.join(STATE_DIR, 'agents', agentId, 'sessions'),
+                    path.join(STATE_DIR, 'agents', 'main', 'sessions'),
+                ];
+                for (const dir of dirs) {
+                    const sessFile = path.join(dir, 'sessions.json');
+                    if (fs.existsSync(sessFile)) {
+                        const sessions = JSON.parse(fs.readFileSync(sessFile, 'utf-8'));
+                        let latest: any = null;
+                        let latestTime = 0;
+                        for (const [, sess] of Object.entries(sessions) as [string, any][]) {
+                            if (sess.updatedAt && sess.updatedAt > latestTime) {
+                                latestTime = sess.updatedAt;
+                                latest = sess;
+                            }
+                        }
+                        if (latest) return latest;
+                    }
+                }
+            } catch (e) { }
+            return null;
+        };
 
         const agents = rawAgents.map((agent: any) => {
             const bindings = (config.bindings || []).filter((b: any) => b.agentId === agent.id);
+            
+            // Kiểm tra kết nối Telegram
             const tgBinding = bindings.find((b: any) => b.match?.channel === 'telegram');
             const tgAccountId = tgBinding?.match?.accountId;
             const tgAccount = tgAccountId ? config.channels?.telegram?.accounts?.[tgAccountId] : null;
             const hasTgToken = tgAccount?.botToken ? tgAccount.botToken.length > 5 : false;
-            const zaloBinding = bindings.find((b: any) => b.match?.channel === 'zalo');
-            const hasZalo = !!zaloBinding;
 
             const session = readSessionData(agent.id);
 
-            let role = 'General';
-            if (agent.id === 'ceo') role = 'Orchestrator';
+            // Xác định vai trò
+            let role = 'General Agent';
+            if (agent.id === 'ceo') role = 'Supreme Orchestrator';
             else if (agent.id === 'sales') role = 'Sales & CRM';
-            else if (agent.id === 'marketing') role = 'Marketing Research';
             else if (agent.id === 'devops') role = 'Infrastructure';
 
             return {
@@ -114,19 +93,15 @@ export async function GET(req: Request) {
                 name: agent.identity?.name || agent.id,
                 role,
                 model: session?.model || config.agents?.defaults?.model?.primary?.split('/').pop() || 'unknown',
-                modelProvider: session?.modelProvider || 'google',
                 enabled: agent.enabled !== false,
-                workspace: agent.workspace || `./workspaces/${agent.id}`,
-                default: agent.default || false,
                 telegramConnected: hasTgToken,
-                zaloConnected: hasZalo,
+                // Dữ liệu hoạt động (cho StatsCard)
                 inputTokens: session?.inputTokens || 0,
                 outputTokens: session?.outputTokens || 0,
                 totalTokens: session?.totalTokens || 0,
                 lastActive: session?.updatedAt ? new Date(session.updatedAt).toISOString() : null,
                 lastChannel: session?.lastChannel || null,
                 sessionId: session?.sessionId || null,
-                toolsAllow: agent.tools?.allow || [],
             };
         });
 
