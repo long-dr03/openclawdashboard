@@ -2,6 +2,23 @@ import { NextResponse } from 'next/server';
 import { proxyToAgent } from '@/utils/proxy';
 import fs from 'fs';
 import path from 'path';
+import { AppConfig, AgentConfig, SessionData } from '@/utils/types';
+
+interface AgentInfo {
+    id: string;
+    name: string;
+    role: string;
+    model: string;
+    enabled: boolean;
+    telegramConnected: boolean;
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    lastActive: string | null;
+    lastChannel: string | null;
+    sessionId: string | null;
+    folder: string;
+}
 
 export async function GET(req: Request) {
     try {
@@ -10,104 +27,95 @@ export async function GET(req: Request) {
         if (proxyResponse) return proxyResponse;
 
         // 2. CHẾ ĐỘ LOCAL (TRÊN VPS): Tự tìm và đọc file cấu hình
-        const getCEODir = () => {
-            // Ưu tiên biến môi trường nếu có
-            if (process.env.OPENCLAW_CONFIG_DIR) return process.env.OPENCLAW_CONFIG_DIR;
-            
-            // Các đường dẫn khả thi dựa trên cấu trúc bạn cung cấp
-            const possible = [
-                '/home/admin/openclaw-multi/ceo',                 // Đường dẫn tuyệt đối trên VPS admin
-                path.resolve(process.cwd(), '../openclaw-multi/ceo'), // Ngang hàng với repo dashboard
-                path.resolve(process.cwd(), '..'),                 // Trường hợp chạy bên trong folder ceo
-                '/home/agent/openclaw-multi/ceo',                 // Dự phòng cho user agent
-            ];
-            
-            for (const p of possible) {
-                if (fs.existsSync(path.join(p, 'config.json'))) return p;
-            }
-            return possible[0];
-        };
+        const MULTI_ROOT = '/home/admin/openclaw-multi';
+        const agentFolders = ['ceo', 'devops', 'sales'];
+        const allAgents: AgentInfo[] = [];
 
-        const CEO_DIR = getCEODir();
-        const CONFIG_PATH = path.join(CEO_DIR, 'config.json');
-        const STATE_DIR = path.join(CEO_DIR, 'state');
+        for (const folder of agentFolders) {
+            const CEO_DIR = path.join(MULTI_ROOT, folder);
+            const CONFIG_PATH = path.join(CEO_DIR, 'config.json');
+            const STATE_DIR = path.join(CEO_DIR, 'state');
 
-        console.log('[API /agents] Scanning for config at:', CONFIG_PATH);
+            if (!fs.existsSync(CONFIG_PATH)) continue;
 
-        if (!fs.existsSync(CONFIG_PATH)) {
-            return NextResponse.json({ 
-                error: "Config not found", 
-                tried: CONFIG_PATH,
-                msg: "Dashboard không tìm thấy file config.json của OpenClaw."
-            }, { status: 404 });
-        }
-
-        const config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
-        const rawAgents = config.agents?.list || [];
-
-        // Logic đọc session để biết trạng thái hoạt động (giữ nguyên như cũ)
-        const readSessionData = (agentId: string) => {
             try {
-                const dirs = [
-                    path.join(STATE_DIR, 'agents', agentId, 'sessions'),
-                    path.join(STATE_DIR, 'agents', 'main', 'sessions'),
-                ];
-                for (const dir of dirs) {
-                    const sessFile = path.join(dir, 'sessions.json');
-                    if (fs.existsSync(sessFile)) {
-                        const sessions = JSON.parse(fs.readFileSync(sessFile, 'utf-8'));
-                        let latest: any = null;
-                        let latestTime = 0;
-                        for (const [, sess] of Object.entries(sessions) as [string, any][]) {
-                            if (sess.updatedAt && sess.updatedAt > latestTime) {
-                                latestTime = sess.updatedAt;
-                                latest = sess;
+                const config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8')) as AppConfig;
+                const rawAgents = config.agents?.list || [];
+
+                // Logic đọc session để biết trạng thái hoạt động
+                const readSessionData = (agentId: string): SessionData | null => {
+                    try {
+                        const dirs = [
+                            path.join(STATE_DIR, 'agents', agentId, 'sessions'),
+                            path.join(STATE_DIR, 'agents', 'main', 'sessions'),
+                            path.join(STATE_DIR, 'sessions'), // Một số bản custom có thể để ở đây
+                        ];
+                        for (const dir of dirs) {
+                            const sessFile = path.join(dir, 'sessions.json');
+                            if (fs.existsSync(sessFile)) {
+                                const sessions = JSON.parse(fs.readFileSync(sessFile, 'utf-8')) as Record<string, SessionData>;
+                                let latest: SessionData | null = null;
+                                let latestTime = 0;
+                                for (const sess of Object.values(sessions)) {
+                                    if (sess.updatedAt && sess.updatedAt > latestTime) {
+                                        latestTime = sess.updatedAt;
+                                        latest = sess;
+                                    }
+                                }
+                                if (latest) return latest;
                             }
                         }
-                        if (latest) return latest;
-                    }
-                }
-            } catch (e) { }
-            return null;
-        };
+                    } catch { }
+                    return null;
+                };
 
-        const agents = rawAgents.map((agent: any) => {
-            const bindings = (config.bindings || []).filter((b: any) => b.agentId === agent.id);
-            
-            // Kiểm tra kết nối Telegram
-            const tgBinding = bindings.find((b: any) => b.match?.channel === 'telegram');
-            const tgAccountId = tgBinding?.match?.accountId;
-            const tgAccount = tgAccountId ? config.channels?.telegram?.accounts?.[tgAccountId] : null;
-            const hasTgToken = tgAccount?.botToken ? tgAccount.botToken.length > 5 : false;
+                rawAgents.forEach((agent: AgentConfig) => {
+                    const bindings = (config.bindings || []) as any[];
+                    const agentBindings = bindings.filter((b: any) => b.agentId === agent.id);
+                    
+                    // Kiểm tra kết nối Telegram (hỗ trợ cả config cũ và mới)
+                    const tgBinding = agentBindings.find((b: any) => b.match?.channel === 'telegram');
+                    const tgAccountId = tgBinding?.match?.accountId;
+                    const telegramConfig = config.channels?.telegram as any;
+                    const tgAccount = tgAccountId ? telegramConfig?.accounts?.[tgAccountId] : telegramConfig;
+                    const hasTgToken = tgAccount?.botToken ? tgAccount.botToken.length > 5 : false;
 
-            const session = readSessionData(agent.id);
+                    const session = readSessionData(agent.id);
 
-            // Xác định vai trò
-            let role = 'General Agent';
-            if (agent.id === 'ceo') role = 'Supreme Orchestrator';
-            else if (agent.id === 'sales') role = 'Sales & CRM';
-            else if (agent.id === 'devops') role = 'Infrastructure';
+                    // Xác định vai trò
+                    let role = 'General Agent';
+                    if (agent.id === 'ceo') role = 'Supreme Orchestrator';
+                    else if (agent.id === 'sales') role = 'Sales & CRM';
+                    else if (agent.id === 'devops') role = 'Infrastructure';
 
-            return {
-                id: agent.id,
-                name: agent.identity?.name || agent.id,
-                role,
-                model: session?.model || config.agents?.defaults?.model?.primary?.split('/').pop() || 'unknown',
-                enabled: agent.enabled !== false,
-                telegramConnected: hasTgToken,
-                // Dữ liệu hoạt động (cho StatsCard)
-                inputTokens: session?.inputTokens || 0,
-                outputTokens: session?.outputTokens || 0,
-                totalTokens: session?.totalTokens || 0,
-                lastActive: session?.updatedAt ? new Date(session.updatedAt).toISOString() : null,
-                lastChannel: session?.lastChannel || null,
-                sessionId: session?.sessionId || null,
-            };
-        });
+                    allAgents.push({
+                        id: agent.id,
+                        name: (agent.identity?.name as string) || agent.id,
+                        role,
+                        model: session?.model || (config.agents?.defaults?.model?.primary as string)?.split('/').pop() || 'unknown',
+                        enabled: agent.enabled !== false,
+                        telegramConnected: hasTgToken,
+                        inputTokens: session?.inputTokens || 0,
+                        outputTokens: session?.outputTokens || 0,
+                        totalTokens: session?.totalTokens || 0,
+                        lastActive: session?.updatedAt ? new Date(session.updatedAt).toISOString() : null,
+                        lastChannel: session?.lastChannel || null,
+                        sessionId: session?.sessionId || null,
+                        folder: folder // Lưu vết thư mục
+                    });
+                });
+            } catch (err) {
+                console.error(`Error reading config in ${folder}:`, err);
+            }
+        }
 
-        return NextResponse.json(agents);
-    } catch (error: any) {
-        console.error('[API /agents] Error:', error.message);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        // Lọc bỏ các agent trùng ID (nếu có)
+        const uniqueAgents = Array.from(new Map(allAgents.map(a => [a.id, a])).values());
+        return NextResponse.json(uniqueAgents);
+
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        console.error('[API /agents] Error:', msg);
+        return NextResponse.json({ error: msg }, { status: 500 });
     }
 }

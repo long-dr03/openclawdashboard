@@ -20,6 +20,7 @@ export function Sidebar() {
   const navItems = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/agents', label: 'Agent Fleet', icon: Users, badge: 3 },
+    { href: '/ceo', label: 'CEO Center', icon: ShieldAlert },
     { href: '/broadcast', label: 'Broadcast', icon: Radio },
     { href: '/tasks', label: 'Mission Control', icon: CheckSquare },
   ];

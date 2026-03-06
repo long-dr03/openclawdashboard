@@ -27,8 +27,9 @@ export async function POST(request: Request) {
             try {
                 const { stdout } = await execAsync(`pm2 restart ${PM2_PROCESS_NAME}`, { timeout: 10000 });
                 return NextResponse.json({ success: true, message: 'OpenClaw Gateway restart triggered', output: stdout.trim() });
-            } catch (e: any) {
-                return NextResponse.json({ success: false, error: `PM2 restart failed: ${e.message}` }, { status: 500 });
+            } catch (e: unknown) {
+                const message = e instanceof Error ? e.message : String(e);
+                return NextResponse.json({ success: false, error: `PM2 restart failed: ${message}` }, { status: 500 });
             }
         }
 
@@ -41,8 +42,9 @@ export async function POST(request: Request) {
                     message: `Agent "${agentId}" process restarted (gateway restart)`,
                     output: stdout.trim(),
                 });
-            } catch (e: any) {
-                return NextResponse.json({ success: false, error: `PM2 restart failed: ${e.message}` }, { status: 500 });
+            } catch (e: unknown) {
+                const message = e instanceof Error ? e.message : String(e);
+                return NextResponse.json({ success: false, error: `PM2 restart failed: ${message}` }, { status: 500 });
             }
         }
 
@@ -54,9 +56,10 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ success: false, error: `Unknown action: ${action}` }, { status: 400 });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[Agent Control] Error:', error);
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        const message = error instanceof Error ? error.message : String(error);
+        return NextResponse.json({ success: false, error: message }, { status: 500 });
     }
 }
 
@@ -69,13 +72,13 @@ function toggleAgentSafe(agentId: string, shouldEnable: boolean) {
         const configRaw = fs.readFileSync(CONFIG_PATH, 'utf-8');
         const config = JSON.parse(configRaw);
 
-        let disabledAgents: any[] = [];
+        let disabledAgents: { id: string; [key: string]: unknown }[] = [];
         if (fs.existsSync(DISABLED_AGENTS_PATH)) {
             try { disabledAgents = JSON.parse(fs.readFileSync(DISABLED_AGENTS_PATH, 'utf-8')); } catch { }
         }
 
-        const activeIndex = config.agents?.list?.findIndex((a: any) => a.id === agentId);
-        const inactiveIndex = disabledAgents.findIndex((a: any) => a.id === agentId);
+        const activeIndex = config.agents?.list?.findIndex((a: { id: string }) => a.id === agentId);
+        const inactiveIndex = disabledAgents.findIndex((a: { id: string }) => a.id === agentId);
 
         if (shouldEnable) {
             if (activeIndex !== -1 && activeIndex !== undefined) {
@@ -117,7 +120,8 @@ function toggleAgentSafe(agentId: string, shouldEnable: boolean) {
             requiresRestart: true
         });
 
-    } catch (e: any) {
-        return NextResponse.json({ success: false, error: `Toggle failed: ${e.message}` }, { status: 500 });
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e);
+        return NextResponse.json({ success: false, error: `Toggle failed: ${message}` }, { status: 500 });
     }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Activity, Radio, CheckSquare, Bot, Cpu, Filter } from 'lucide-react';
 
 interface TimelineEvent {
@@ -12,16 +12,33 @@ interface TimelineEvent {
 
 export default function TimelinePage() {
     const [filter, setFilter] = useState('all');
+    const [now, setNow] = useState<number>(0);
 
-    const events: TimelineEvent[] = [
-        { type: 'system' as const, title: 'Gateway khởi động', desc: 'OpenClaw Gateway started on port 18789 — v2026.2.6-3', time: new Date(Date.now() - 7200000) },
-        { type: 'agent' as const, title: 'CEO Agent online', desc: 'Model: gemini-3-pro-high — Session 608e7c42 — 70,266 tokens', time: new Date(Date.now() - 3600000) },
-        { type: 'agent' as const, title: 'Sales Agent — phiên cuối', desc: 'Model: gemini-2.5-flash-lite — User: @rurimeiko — 28,650 tokens', time: new Date(Date.now() - 86400000 * 4) },
-        { type: 'agent' as const, title: 'DevOps Agent — phiên cuối', desc: 'Model: gemini-2.5-flash-lite — User: @rurimeiko — 14,293 tokens', time: new Date(Date.now() - 86400000 * 4) },
-        { type: 'task' as const, title: 'Dashboard Canvas UI deploy', desc: 'CEO Dashboard v4.1 deployed via ngrok', time: new Date(Date.now() - 600000) },
-        { type: 'system' as const, title: 'PM2 Process mon', desc: 'my-openclaw-bot uptime 3d 4h — memory 125MB — CPU 2.1%', time: new Date(Date.now() - 1800000) },
-        { type: 'broadcast' as const, title: 'Test Broadcast', desc: 'System test broadcast to all agents', time: new Date(Date.now() - 18000000) },
-    ].sort((a, b) => b.time.getTime() - a.time.getTime());
+    // Initialize 'now' on mount to avoid hydration mismatch and purity errors
+    useEffect(() => {
+        const handle = requestAnimationFrame(() => {
+            setNow(Date.now());
+        });
+        // Optional: Update 'now' every minute to keep 'ago' labels fresh
+        const interval = setInterval(() => setNow(Date.now()), 60000);
+        return () => {
+            cancelAnimationFrame(handle);
+            clearInterval(interval);
+        };
+    }, []);
+
+    const events: TimelineEvent[] = useMemo(() => {
+        if (now === 0) return [];
+        return [
+            { type: 'system' as const, title: 'Gateway khởi động', desc: 'OpenClaw Gateway started on port 18789 — v2026.2.6-3', time: new Date(now - 7200000) },
+            { type: 'agent' as const, title: 'CEO Agent online', desc: 'Model: gemini-3-pro-high — Session 608e7c42 — 70,266 tokens', time: new Date(now - 3600000) },
+            { type: 'agent' as const, title: 'Sales Agent — phiên cuối', desc: 'Model: gemini-2.5-flash-lite — User: @rurimeiko — 28,650 tokens', time: new Date(now - 86400000 * 4) },
+            { type: 'agent' as const, title: 'DevOps Agent — phiên cuối', desc: 'Model: gemini-2.5-flash-lite — User: @rurimeiko — 14,293 tokens', time: new Date(now - 86400000 * 4) },
+            { type: 'task' as const, title: 'Dashboard Canvas UI deploy', desc: 'CEO Dashboard v4.1 deployed via ngrok', time: new Date(now - 600000) },
+            { type: 'system' as const, title: 'PM2 Process mon', desc: 'my-openclaw-bot uptime 3d 4h — memory 125MB — CPU 2.1%', time: new Date(now - 1800000) },
+            { type: 'broadcast' as const, title: 'Test Broadcast', desc: 'System test broadcast to all agents', time: new Date(now - 18000000) },
+        ].sort((a, b) => b.time.getTime() - a.time.getTime());
+    }, [now]);
 
     const filtered = filter === 'all' ? events : events.filter(e => e.type === filter);
 
@@ -48,7 +65,8 @@ export default function TimelinePage() {
     ];
 
     const formatTime = (date: Date) => {
-        const diff = Date.now() - date.getTime();
+        if (now === 0) return '...';
+        const diff = now - date.getTime();
         const minutes = Math.floor(diff / 60000);
         if (minutes < 60) return `${minutes}m ago`;
         const hours = Math.floor(minutes / 60);

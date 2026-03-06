@@ -52,3 +52,30 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: e.message, events: [] });
     }
 }
+
+export async function POST(req: Request) {
+    try {
+        const auth = getOAuthClient();
+        if (!auth) {
+            return NextResponse.json({ error: 'Google integration not configured' }, { status: 400 });
+        }
+
+        const { summary, description, startTime, endTime } = await req.json();
+        const calendar = google.calendar({ version: 'v3', auth });
+
+        const res = await calendar.events.insert({
+            calendarId: 'primary',
+            requestBody: {
+                summary,
+                description,
+                start: { dateTime: startTime },
+                end: { dateTime: endTime },
+            },
+        });
+
+        return NextResponse.json({ success: true, id: res.data.id });
+    } catch (e: any) {
+        console.error('Calendar Add Error:', e);
+        return NextResponse.json({ error: e.message }, { status: 500 });
+    }
+}

@@ -17,19 +17,19 @@ export async function GET() {
         const config = JSON.parse(raw);
 
         // Read disabled agents
-        let disabledAgents: any[] = [];
+        let disabledAgents: { id: string; [key: string]: unknown }[] = [];
         if (fs.existsSync(DISABLED_AGENTS_PATH)) {
             try {
                 disabledAgents = JSON.parse(fs.readFileSync(DISABLED_AGENTS_PATH, 'utf-8'));
-            } catch (e) {
+            } catch (e: unknown) {
                 console.warn('Failed to parse disabled-agents.json', e);
             }
         }
 
         // Merge active and disabled agents
         // Mark disabled ones with enabled: false
-        const activeAgents = (config.agents?.list || []).map((a: any) => ({ ...a, enabled: true }));
-        const inactiveAgents = disabledAgents.map((a: any) => ({ ...a, enabled: false }));
+        const activeAgents = (config.agents?.list || []).map((a: { id: string }) => ({ ...a, enabled: true }));
+        const inactiveAgents = disabledAgents.map((a: { id: string }) => ({ ...a, enabled: false }));
 
         // Combine into one list for the UI
         if (config.agents) {
@@ -37,7 +37,7 @@ export async function GET() {
         }
 
         // Merge Google credentials from sidecar file
-        let googleCreds: any = {};
+        let googleCreds: { clientId?: string; clientSecret?: string; tokens?: unknown } = {};
         if (fs.existsSync(GOOGLE_CREDS_PATH)) {
             try { googleCreds = JSON.parse(fs.readFileSync(GOOGLE_CREDS_PATH, 'utf-8')); } catch { }
         }
@@ -48,8 +48,9 @@ export async function GET() {
         };
 
         return NextResponse.json(config);
-    } catch (e: any) {
-        return NextResponse.json({ error: e.message }, { status: 500 });
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e);
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }
 
@@ -66,7 +67,7 @@ export async function PUT(request: Request) {
         const configRaw = fs.readFileSync(CONFIG_PATH, 'utf-8');
         const config = JSON.parse(configRaw);
 
-        let disabledAgents: any[] = [];
+        let disabledAgents: { id: string; [key: string]: any }[] = [];
         if (fs.existsSync(DISABLED_AGENTS_PATH)) {
             try {
                 disabledAgents = JSON.parse(fs.readFileSync(DISABLED_AGENTS_PATH, 'utf-8'));
@@ -75,9 +76,9 @@ export async function PUT(request: Request) {
 
         // Helper to find agent in either list
         const findAgent = (id: string) => {
-            const active = config.agents?.list?.find((a: any) => a.id === id);
+            const active = config.agents?.list?.find((a: { id: string }) => a.id === id);
             if (active) return { agent: active, source: 'active' };
-            const inactive = disabledAgents.find((a: any) => a.id === id);
+            const inactive = disabledAgents.find((a: { id: string }) => a.id === id);
             if (inactive) return { agent: inactive, source: 'inactive' };
             return null;
         };
@@ -88,7 +89,7 @@ export async function PUT(request: Request) {
                 const found = findAgent(updatedAgent.id);
 
                 if (found) {
-                    let agent = found.agent;
+                    const agent = found.agent;
 
                     // Update properties
                     if (updatedAgent.identity) agent.identity = { ...agent.identity, ...updatedAgent.identity };
@@ -106,7 +107,7 @@ export async function PUT(request: Request) {
                         if (!shouldEnable) {
                             if (found.source === 'active') {
                                 // Remove from config
-                                config.agents.list = config.agents.list.filter((a: any) => a.id !== agent.id);
+                                config.agents.list = config.agents.list.filter((a: { id: string }) => a.id !== agent.id);
                                 // Add to disabled list
                                 // Ensure we clean 'enabled' prop before saving to file (avoid schema errors if moved back)
                                 const agentToSave = { ...agent };
@@ -123,7 +124,7 @@ export async function PUT(request: Request) {
                         if (shouldEnable) {
                             if (found.source === 'inactive') {
                                 // Remove from disabled list
-                                disabledAgents = disabledAgents.filter((a: any) => a.id !== agent.id);
+                                disabledAgents = disabledAgents.filter((a: { id: string }) => a.id !== agent.id);
                                 // Add to config
                                 const agentToSave = { ...agent };
                                 delete agentToSave.enabled;
@@ -156,7 +157,7 @@ export async function PUT(request: Request) {
 
         // Update Telegram tokens
         if (updates.channels?.telegram?.accounts) {
-            for (const [accountId, accountData] of Object.entries(updates.channels.telegram.accounts as Record<string, any>)) {
+            for (const [accountId, accountData] of Object.entries(updates.channels.telegram.accounts as Record<string, { botToken?: string; allowFrom?: string[] }>)) {
                 if (config.channels?.telegram?.accounts?.[accountId]) {
                     if (accountData.botToken !== undefined) config.channels.telegram.accounts[accountId].botToken = accountData.botToken;
                     if (accountData.allowFrom !== undefined) config.channels.telegram.accounts[accountId].allowFrom = accountData.allowFrom;
@@ -181,15 +182,15 @@ export async function PUT(request: Request) {
 
         // Save Google credentials to sidecar file (never to config.json)
         if (updates._googleIntegration) {
-            let googleCreds: any = {};
+            let googleCreds: { clientId?: string; clientSecret?: string } = {};
             if (fs.existsSync(GOOGLE_CREDS_PATH)) {
                 try { googleCreds = JSON.parse(fs.readFileSync(GOOGLE_CREDS_PATH, 'utf-8')); } catch { }
             }
             if (updates._googleIntegration.clientId !== undefined) {
-                googleCreds.clientId = updates._googleIntegration.clientId.trim().replace(/\/$/, '');
+                googleCreds.clientId = (updates._googleIntegration.clientId as string).trim().replace(/\/$/, '');
             }
             if (updates._googleIntegration.clientSecret !== undefined) {
-                googleCreds.clientSecret = updates._googleIntegration.clientSecret.trim();
+                googleCreds.clientSecret = (updates._googleIntegration.clientSecret as string).trim();
             }
             fs.writeFileSync(GOOGLE_CREDS_PATH, JSON.stringify(googleCreds, null, 2));
         }
@@ -198,12 +199,12 @@ export async function PUT(request: Request) {
             config.models = config.models || {};
             config.models.providers = config.models.providers || {};
 
-            for (const [providerId, providerData] of Object.entries(updates.models.providers as Record<string, any>)) {
+            for (const [providerId, providerData] of Object.entries(updates.models.providers as Record<string, unknown>)) {
                 if (config.models.providers[providerId]) {
                     // Deep merge existing provider
                     config.models.providers[providerId] = {
-                        ...config.models.providers[providerId],
-                        ...providerData
+                        ...(config.models.providers[providerId] as Record<string, unknown>),
+                        ...(providerData as Record<string, unknown>)
                     };
                 } else {
                     // New provider
@@ -214,7 +215,7 @@ export async function PUT(request: Request) {
 
         // Clean up 'enabled' property from config.agents.list just in case
         if (config.agents?.list) {
-            config.agents.list.forEach((a: any) => delete a.enabled);
+            config.agents.list.forEach((a: { enabled?: boolean }) => delete a.enabled);
         }
 
         // Timestamp
@@ -226,8 +227,9 @@ export async function PUT(request: Request) {
         fs.writeFileSync(DISABLED_AGENTS_PATH, JSON.stringify(disabledAgents, null, 2));
 
         return NextResponse.json({ success: true, message: 'Configuration saved successfully' });
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error('[Config API] Save error:', e);
-        return NextResponse.json({ error: e.message }, { status: 500 });
+        const message = e instanceof Error ? e.message : String(e);
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

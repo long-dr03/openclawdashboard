@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Server, Cpu, MemoryStick, HardDrive, RefreshCw, Activity, Wifi, WifiOff, Clock, Terminal as TermIcon, Play, AlertTriangle, CheckCircle2, XCircle, Container, Database, Globe, Zap } from 'lucide-react';
+import { AgentConfigTab } from '@/components/AgentConfigTab';
 
 interface SystemStats {
     cpu: { usage: number; cores: number; model: string };
@@ -47,6 +48,7 @@ interface AlertItem {
 }
 
 export default function DevOpsPage() {
+    const [activeTab, setActiveTab] = useState<'system' | 'agents'>('system');
     const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
     const [services, setServices] = useState<ServiceStatus[]>([]);
     const [pm2Data, setPm2Data] = useState<PM2Process[]>([]);
@@ -197,26 +199,34 @@ export default function DevOpsPage() {
     return (
         <div className="p-8">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-white flex items-center">
                         <Server size={28} className="mr-3 text-red-400" />
                         DevOps Monitoring Center
                     </h1>
                     <p className="text-slate-500 text-sm mt-1">
-                        🛡️ System Guardian — Real-time infrastructure monitoring
+                        🛡️ System Guardian — Real-time infrastructure & Agent monitoring
                         {systemStats && <span className="ml-2 text-slate-600 font-mono">({systemStats.hostname} / {systemStats.platform})</span>}
                     </p>
                 </div>
                 <div className="flex items-center space-x-3">
-                    <span className="text-xs text-slate-500 font-mono">Auto-refresh 15s · Last: {lastRefresh || '--:--:--'}</span>
+                    <div className="flex bg-black/30 p-1 rounded-lg border border-white/5 mr-2">
+                        <button onClick={() => setActiveTab('system')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === 'system' ? 'bg-red-500/20 text-red-400' : 'text-slate-400 hover:text-white'}`}>System Health</button>
+                        <button onClick={() => setActiveTab('agents')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === 'agents' ? 'bg-blue-500/20 text-blue-400' : 'text-slate-400 hover:text-white'}`}>Agent Config</button>
+                    </div>
+                    <span className="text-xs text-slate-500 font-mono hidden lg:inline">Auto-refresh 15s · Last: {lastRefresh || '--:--:--'}</span>
                     <button onClick={fetchAll} disabled={loading} className="flex items-center px-4 py-2 bg-blue-600/10 text-blue-400 border border-blue-600/20 rounded-lg text-sm hover:bg-blue-600/20 transition-colors disabled:opacity-50">
                         <RefreshCw size={14} className={`mr-2 ${loading ? 'animate-spin' : ''}`} /> Refresh
                     </button>
                 </div>
             </div>
 
-            {/* Alerts Banner */}
+            {activeTab === 'agents' ? (
+                <AgentConfigTab />
+            ) : (
+                <>
+                    {/* Alerts Banner */}
             {alerts.filter(a => a.severity !== 'info').length > 0 && (
                 <div className="mb-6 space-y-2">
                     {alerts.filter(a => a.severity !== 'info').map((alert, idx) => (
@@ -430,6 +440,8 @@ export default function DevOpsPage() {
                     </div>
                 </div>
             </div>
+            </>
+            )}
         </div>
     );
 }

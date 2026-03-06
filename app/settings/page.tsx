@@ -19,7 +19,7 @@ interface TelegramAccount {
 }
 
 export default function SettingsPage() {
-    const [config, setConfig] = useState<any>(null);
+    const [config, setConfig] = useState<Record<string, any> | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [showTokens, setShowTokens] = useState<Record<string, boolean>>({});
@@ -70,13 +70,13 @@ export default function SettingsPage() {
                 setIsGoogleConnected(!!googleConfig?.hasTokens);
 
                 // Parse available models from agents.defaults.models
-                const models = Object.entries(data.agents?.defaults?.models || {}).map(([id, val]: [string, any]) => ({
+                const models = Object.entries((data.agents?.defaults?.models || {}) as Record<string, { alias?: string }>).map(([id, val]) => ({
                     id, 
                     name: val.alias || id
                 }));
                 // Also parse from providers if available
                 if (data.models?.providers?.moonshot?.models) {
-                    data.models.providers.moonshot.models.forEach((m: any) => {
+                    data.models.providers.moonshot.models.forEach((m: { id: string; name?: string }) => {
                         const fullId = `moonshot/${m.id}`;
                         if (!models.find(x => x.id === fullId)) {
                             models.push({ id: fullId, name: m.name || m.id });
@@ -87,7 +87,7 @@ export default function SettingsPage() {
 
                 // Collect all unique allowFrom users
                 const allUsers = new Set<number>();
-                Object.values(data.channels?.telegram?.accounts || {}).forEach((acc: any) => {
+                Object.values((data.channels?.telegram?.accounts || {}) as Record<string, TelegramAccount>).forEach((acc) => {
                     (acc.allowFrom || []).forEach((id: number) => allUsers.add(id));
                 });
                 setAllowedUsers(Array.from(allUsers).join(', '));
@@ -160,7 +160,7 @@ export default function SettingsPage() {
             const parsedUsers = allowedUsers.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
 
             // Build telegram accounts update with allowFrom
-            const telegramUpdate: Record<string, any> = {};
+            const telegramUpdate: Record<string, Partial<TelegramAccount>> = {};
             for (const [accountId, acc] of Object.entries(telegramAccounts)) {
                 telegramUpdate[accountId] = {
                     botToken: acc.botToken,
@@ -219,8 +219,8 @@ export default function SettingsPage() {
             } else {
                 showToastMsg('error', data.error || 'Save failed');
             }
-        } catch (e: any) {
-            showToastMsg('error', e.message);
+        } catch (e: unknown) {
+            showToastMsg('error', e instanceof Error ? e.message : 'Unknown error');
         } finally {
             setSaving(false);
         }
@@ -235,8 +235,8 @@ export default function SettingsPage() {
             });
             const data = await res.json();
             showToastMsg(data.success ? 'success' : 'error', data.message || data.error);
-        } catch (e: any) {
-            showToastMsg('error', e.message);
+        } catch (e: unknown) {
+            showToastMsg('error', e instanceof Error ? e.message : 'Unknown error');
         }
     };
 
@@ -244,7 +244,7 @@ export default function SettingsPage() {
 
     // Find which telegram account belongs to which agent
     const getAccountForAgent = (agentId: string): string | null => {
-        const binding = config?.bindings?.find((b: any) => b.agentId === agentId);
+        const binding = config?.bindings?.find((b: { agentId: string }) => b.agentId === agentId);
         return binding?.match?.accountId || null;
     };
 
@@ -355,7 +355,7 @@ export default function SettingsPage() {
                                         <div className="grid grid-cols-3 gap-4 items-center">
                                             <label className="text-xs text-slate-400">Agent Model</label>
                                             <select 
-                                                value={(agent as any).model || ''} // cast to any because interface might not have model yet
+                                                value={agent.model || ''}
                                                 onChange={e => updateAgent(agent.id, 'model', e.target.value)}
                                                 className="col-span-2 bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50"
                                             >
@@ -520,7 +520,7 @@ export default function SettingsPage() {
                     </button>
                 </div>
 
-                <p className="text-[10px] text-slate-600 text-center pb-4">Changes are saved to <code>config.json</code>. Click "Restart PM2" to apply changes to running agents.</p>
+                <p className="text-[10px] text-slate-600 text-center pb-4">Changes are saved to <code>config.json</code>. Click &quot;Restart PM2&quot; to apply changes to running agents.</p>
             </div>
         </div>
     );

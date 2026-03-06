@@ -1,4 +1,5 @@
 
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { google } = require('googleapis');
 const fs = require('fs');
 const path = require('path');

@@ -3,7 +3,7 @@ import { proxyToAgent } from '@/utils/proxy';
 import fs from 'fs';
 import path from 'path';
 
-const CEO_DIR = process.env.OPENCLAW_CONFIG_DIR || path.resolve(process.cwd(), '..');
+const CEO_DIR = process.env.OPENCLAW_CONFIG_DIR || path.resolve(process.cwd(), '..', 'openclaw-multi', 'ceo');
 const CONFIG_PATH = path.join(CEO_DIR, 'config.json');
 
 export async function POST(request: Request) {
@@ -21,26 +21,41 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: false, error: 'Message content is required' }, { status: 400 });
         }
 
-        let config: any = {};
+        let config: {
+            gateway?: { auth?: { token?: string } };
+            bindings?: { agentId: string; match?: { channel: string; accountId?: string } }[];
+            channels?: { telegram?: { accounts?: Record<string, { botToken: string; allowFrom: string[] }> } };
+        } = {};
         try {
             if (fs.existsSync(CONFIG_PATH)) {
                 config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
             }
-        } catch (e) {
+        } catch (e: unknown) {
             console.warn('[BROADCAST] Could not read config:', e);
         }
 
         const gatewayToken = config.gateway?.auth?.token || '';
-        const results: any[] = [];
+        const results: {
+            agentId: string;
+            chatId?: string;
+            method: string;
+            success: boolean;
+            error?: string | null;
+            reply?: string | null;
+        }[] = [];
 
         for (const targetId of recipients) {
-            const bindings = (config.bindings || []).filter((b: any) => b.agentId === targetId);
-            const tgBinding = bindings.find((b: any) => b.match?.channel === 'telegram');
-            const zaloBinding = bindings.find((b: any) => b.match?.channel === 'zalo');
+            const bindings = (config.bindings || []).filter((b) => b.agentId === targetId);
+            const tgBinding = bindings.find((b) => b.match?.channel === 'telegram');
+            const zaloBinding = bindings.find((b) => b.match?.channel === 'zalo');
 
             const accountId = tgBinding?.match?.accountId;
-            const botToken = accountId ? config.channels?.telegram?.accounts?.[accountId]?.botToken : null;
-            const allowedUsers = accountId ? config.channels?.telegram?.accounts?.[accountId]?.allowFrom : [];
+            // Tìm kiếm sâu hơn trong accounts
+            const telegramConfig = config.channels?.telegram as any;
+            const tgAccount = accountId ? telegramConfig?.accounts?.[accountId] : telegramConfig;
+            
+            const botToken = tgAccount?.botToken;
+            const allowedUsers = tgAccount?.allowFrom || [];
 
             if (botToken && botToken.length > 5 && allowedUsers && allowedUsers.length > 0) {
                 for (const chatId of allowedUsers) {
@@ -58,7 +73,7 @@ export async function POST(request: Request) {
                                 parse_mode: 'Markdown',
                             }),
                         });
-                        const telegramData = await telegramRes.json();
+                        const telegramData = (await telegramRes.json()) as { ok: boolean; description?: string };
                         results.push({
                             agentId: targetId,
                             chatId,
@@ -66,8 +81,9 @@ export async function POST(request: Request) {
                             success: telegramData.ok === true,
                             error: telegramData.ok ? null : telegramData.description,
                         });
-                    } catch (tgErr: any) {
-                        results.push({ agentId: targetId, chatId, method: 'telegram', success: false, error: tgErr.message });
+                    } catch (tgErr: unknown) {
+                        const errMsg = tgErr instanceof Error ? tgErr.message : String(tgErr);
+                        results.push({ agentId: targetId, chatId, method: 'telegram', success: false, error: errMsg });
                     }
                 }
             }
@@ -86,15 +102,16 @@ export async function POST(request: Request) {
                             messages: [{ role: "user", content: `[BROADCAST] ${broadcastText}` }],
                         })
                     });
-                    const respData = await resp.json();
+                    const respData = (await resp.json()) as { choices?: { message?: { content?: string } }[] };
                     results.push({
                         agentId: targetId,
                         method: 'zalo-gateway',
                         success: resp.ok,
                         reply: respData.choices?.[0]?.message?.content?.substring(0, 100) || null,
                     });
-                } catch (zaloErr: any) {
-                    results.push({ agentId: targetId, method: 'zalo-gateway', success: false, error: zaloErr.message });
+                } catch (zaloErr: unknown) {
+                    const errMsg = zaloErr instanceof Error ? zaloErr.message : String(zaloErr);
+                    results.push({ agentId: targetId, method: 'zalo-gateway', success: false, error: errMsg });
                 }
             }
         }
@@ -107,8 +124,9 @@ export async function POST(request: Request) {
             failed: results.filter(r => !r.success).length,
             results,
         });
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error('[BROADCAST] Error:', e);
-        return NextResponse.json({ success: false, error: e.message || "Invalid request" }, { status: 400 });
+        const errMsg = e instanceof Error ? e.message : "Invalid request";
+        return NextResponse.json({ success: false, error: errMsg }, { status: 400 });
     }
 }

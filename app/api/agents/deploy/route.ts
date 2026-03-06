@@ -3,7 +3,6 @@ import fs from 'fs';
 import path from 'path';
 
 // Define paths relative to the Next.js app
-const APP_DIR = process.cwd(); // .../workspaces/ceo/my-app
 const CEO_DIR = process.env.OPENCLAW_CONFIG_DIR || path.resolve(process.cwd(), '..');
 const CONFIG_PATH = path.join(CEO_DIR, 'config.json');
 const WORKSPACES_DIR = path.join(CEO_DIR, 'workspaces'); // Assuming workspaces are now relative to CEO_DIR
@@ -40,7 +39,7 @@ export async function POST(request: Request) {
             const config = JSON.parse(configRaw);
 
             // Check if exists
-            const exists = config.agents.list.find((a: any) => a.id === id);
+            const exists = config.agents.list.find((a: { id: string }) => a.id === id);
             if (!exists) {
                 config.agents.list.push({
                     id,
@@ -66,8 +65,9 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ success: true, message: `Agent ${name} deployed successfully` });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Deploy Error:", error);
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        const message = error instanceof Error ? error.message : String(error);
+        return NextResponse.json({ success: false, error: message }, { status: 500 });
     }
 }

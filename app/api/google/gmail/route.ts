@@ -60,3 +60,42 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: e.message, emails: [] });
     }
 }
+
+export async function POST(req: Request) {
+    try {
+        const auth = getOAuthClient();
+        if (!auth) {
+            return NextResponse.json({ error: 'Google integration not configured' }, { status: 400 });
+        }
+
+        const { to, subject, body } = await req.json();
+        const gmail = google.gmail({ version: 'v1', auth });
+
+        // Helper to encode email
+        const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
+        const str = [
+            `To: ${to}`,
+            'Content-Type: text/html; charset=utf-8',
+            'MIME-Version: 1.0',
+            `Subject: ${utf8Subject}`,
+            '',
+            body
+        ].join('\r\n');
+
+        const encodedMessage = Buffer.from(str)
+            .toString('base64')
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/, '');
+
+        const res = await gmail.users.messages.send({
+            userId: 'me',
+            requestBody: { raw: encodedMessage }
+        });
+
+        return NextResponse.json({ success: true, id: res.data.id });
+    } catch (e: any) {
+        console.error('Gmail Send Error:', e);
+        return NextResponse.json({ error: e.message }, { status: 500 });
+    }
+}

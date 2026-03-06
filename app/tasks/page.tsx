@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Crosshair, Plus, GripVertical, Clock, AlertTriangle, CheckCircle2, Circle } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Crosshair, Plus, GripVertical, Clock, AlertTriangle, CheckCircle2, Circle, Trash2, RefreshCcw } from 'lucide-react';
 
 interface Mission {
     id: number;
@@ -13,17 +13,85 @@ interface Mission {
 }
 
 export default function TasksPage() {
-    const [missions, setMissions] = useState<Mission[]>([
-        { id: 1, title: 'Cấu hình Telegram Sales Bot', desc: 'Thêm botToken cho sales_bot trong config.json', status: 'pending', agent: 'ceo', priority: 'urgent' },
-        { id: 2, title: 'Cấu hình Telegram DevOps Bot', desc: 'Thêm botToken cho devops_bot trong config.json', status: 'pending', agent: 'ceo', priority: 'urgent' },
-        { id: 3, title: 'Tích hợp Gateway API vào Dashboard', desc: 'Kết nối REST API để lấy dữ liệu real-time', status: 'progress', agent: 'ceo', priority: 'normal' },
-        { id: 4, title: 'Setup Knowledge Base Sync', desc: 'Đồng bộ tài liệu từ Google Drive cho agents', status: 'pending', agent: 'ceo', priority: 'normal' },
-    ]);
+    const [missions, setMissions] = useState<Mission[]>([]);
+    const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [newTitle, setNewTitle] = useState('');
     const [newDesc, setNewDesc] = useState('');
     const [newAgent, setNewAgent] = useState('ceo');
     const [newPriority, setNewPriority] = useState<'urgent' | 'normal' | 'low'>('normal');
+
+    const fetchTasks = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await fetch('/api/tasks');
+            const data = await res.json();
+            if (Array.isArray(data)) setMissions(data);
+        } catch (e) {
+            console.error('Failed to fetch tasks', e);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => { fetchTasks(); }, [fetchTasks]);
+
+    const moveTask = async (taskId: number, newStatus: Mission['status']) => {
+        try {
+            const res = await fetch('/api/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'update',
+                    task: { id: taskId, status: newStatus }
+                }),
+            });
+            const data = await res.json();
+            if (data.success) setMissions(data.tasks);
+        } catch (e) { console.error(e); }
+    };
+
+    const addTask = async () => {
+        if (!newTitle.trim()) return;
+        try {
+            const res = await fetch('/api/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'add',
+                    task: {
+                        title: newTitle,
+                        desc: newDesc,
+                        agent: newAgent,
+                        priority: newPriority,
+                    }
+                }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                setMissions(data.tasks);
+                setNewTitle('');
+                setNewDesc('');
+                setShowModal(false);
+            }
+        } catch (e) { console.error(e); }
+    };
+
+    const deleteTask = async (taskId: number) => {
+        if (!confirm('Xác nhận xóa nhiệm vụ này?')) return;
+        try {
+            const res = await fetch('/api/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'delete',
+                    task: { id: taskId }
+                }),
+            });
+            const data = await res.json();
+            if (data.success) setMissions(data.tasks);
+        } catch (e) { console.error(e); }
+    };
 
     const columns = [
         { key: 'pending', label: 'PENDING', icon: Clock, color: 'text-amber-400', dotColor: 'bg-amber-400' },
@@ -37,26 +105,6 @@ export default function TasksPage() {
         low: 'bg-slate-500/20 text-slate-400',
     };
 
-    const moveTask = (taskId: number, newStatus: Mission['status']) => {
-        setMissions(prev => prev.map(m => m.id === taskId ? { ...m, status: newStatus } : m));
-    };
-
-    const addTask = () => {
-        if (!newTitle.trim()) return;
-        const newMission: Mission = {
-            id: Date.now(),
-            title: newTitle,
-            desc: newDesc,
-            status: 'pending',
-            agent: newAgent,
-            priority: newPriority,
-        };
-        setMissions(prev => [...prev, newMission]);
-        setNewTitle('');
-        setNewDesc('');
-        setShowModal(false);
-    };
-
     return (
         <div className="p-8">
             {/* Header */}
@@ -68,9 +116,14 @@ export default function TasksPage() {
                     </h1>
                     <p className="text-slate-500 text-sm mt-1">Manage and track agent tasks and missions</p>
                 </div>
-                <button onClick={() => setShowModal(true)} className="flex items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium text-sm transition-all shadow-lg shadow-blue-600/20">
-                    <Plus size={18} className="mr-2" /> New Mission
-                </button>
+                <div className="flex items-center space-x-3">
+                    <button onClick={fetchTasks} className="p-2.5 bg-white/5 hover:bg-white/10 text-slate-400 rounded-lg transition-all">
+                        <RefreshCcw size={18} className={loading ? 'animate-spin' : ''} />
+                    </button>
+                    <button onClick={() => setShowModal(true)} className="flex items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium text-sm transition-all shadow-lg shadow-blue-600/20">
+                        <Plus size={18} className="mr-2" /> New Mission
+                    </button>
+                </div>
             </div>
 
             {/* Kanban Board */}
@@ -78,7 +131,7 @@ export default function TasksPage() {
                 {columns.map(col => {
                     const colTasks = missions.filter(m => m.status === col.key);
                     return (
-                        <div key={col.key} className="bg-[#16181e] border border-white/5 rounded-xl overflow-hidden">
+                        <div key={col.key} className="bg-[#16181e] border border-white/5 rounded-xl overflow-hidden flex flex-col min-h-[500px]">
                             {/* Column Header */}
                             <div className="p-4 border-b border-white/5 flex items-center justify-between bg-black/20">
                                 <div className="flex items-center">
@@ -89,30 +142,36 @@ export default function TasksPage() {
                             </div>
 
                             {/* Cards */}
-                            <div className="p-3 space-y-3 min-h-[200px]">
+                            <div className="p-3 space-y-3 flex-1 overflow-y-auto">
                                 {colTasks.length === 0 ? (
-                                    <div className="text-center py-8 text-slate-600 text-xs">
-                                        <Circle size={20} className="mx-auto mb-1 opacity-30" />
-                                        Empty
+                                    <div className="text-center py-12 text-slate-600 text-xs italic">
+                                        No missions here
                                     </div>
                                 ) : colTasks.map(task => (
                                     <div key={task.id} className="bg-black/20 border border-white/5 rounded-lg p-3 hover:bg-black/30 transition-colors group">
                                         <div className="flex items-start justify-between mb-2">
                                             <h4 className="text-sm font-medium text-white leading-tight flex-1">{task.title}</h4>
-                                            <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ml-2 shrink-0 ${priorityColors[task.priority]}`}>{task.priority}</span>
+                                            <div className="flex flex-col items-end space-y-1">
+                                                <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ml-2 shrink-0 ${priorityColors[task.priority]}`}>{task.priority}</span>
+                                                <span className="text-[9px] text-slate-500 font-mono bg-black/40 px-1 rounded uppercase">{task.agent}</span>
+                                            </div>
                                         </div>
-                                        <p className="text-xs text-slate-500 mb-3 line-clamp-2">{task.desc}</p>
+                                        <p className="text-xs text-slate-500 mb-3 line-clamp-3">{task.desc}</p>
                                         
-                                        {/* Move buttons */}
-                                        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            {col.key !== 'pending' && (
-                                                <button onClick={() => moveTask(task.id, col.key === 'completed' ? 'progress' : 'pending')}
-                                                    className="text-[10px] px-2 py-1 rounded bg-white/5 text-slate-400 hover:text-white hover:bg-white/10">← Back</button>
-                                            )}
-                                            {col.key !== 'completed' && (
-                                                <button onClick={() => moveTask(task.id, col.key === 'pending' ? 'progress' : 'completed')}
-                                                    className="text-[10px] px-2 py-1 rounded bg-blue-500/10 text-blue-400 hover:bg-blue-500/20">Next →</button>
-                                            )}
+                                        <div className="flex items-center justify-between mt-auto pt-2 border-t border-white/5">
+                                            <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                {col.key !== 'pending' && (
+                                                    <button onClick={() => moveTask(task.id, col.key === 'completed' ? 'progress' : 'pending')}
+                                                        className="text-[10px] px-2 py-1 rounded bg-white/5 text-slate-400 hover:text-white hover:bg-white/10">← Back</button>
+                                                )}
+                                                {col.key !== 'completed' && (
+                                                    <button onClick={() => moveTask(task.id, col.key === 'pending' ? 'progress' : 'completed')}
+                                                        className="text-[10px] px-2 py-1 rounded bg-blue-500/10 text-blue-400 hover:bg-blue-500/20">Next →</button>
+                                                )}
+                                            </div>
+                                            <button onClick={() => deleteTask(task.id)} className="p-1 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Trash2 size={12} />
+                                            </button>
                                         </div>
                                     </div>
                                 ))}
@@ -122,7 +181,7 @@ export default function TasksPage() {
                 })}
             </div>
 
-            {/* New Task Modal */}
+            {/* Modal remains the same but with Agent options from Config */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
                     <div className="bg-[#16181e] border border-white/10 rounded-2xl w-full max-w-lg p-6 shadow-2xl" onClick={e => e.stopPropagation()}>

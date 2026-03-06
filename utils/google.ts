@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 const APP_DIR = process.cwd();
-const ROOT_DIR = path.resolve(APP_DIR, '../../../');
+const ROOT_DIR = process.env.OPENCLAW_CONFIG_DIR || path.resolve(APP_DIR, '..', 'openclaw-multi', 'ceo');
 const GOOGLE_CREDS_PATH = path.join(ROOT_DIR, 'google-credentials.json');
 
 // Scopes for Gmail and Calendar
@@ -57,7 +57,9 @@ export function getOAuthClient() {
     if (!config || !config.clientId || !config.clientSecret) return null;
 
     // Standard Next.js redirect URI
-    const redirectUri = `${process.env.DOMAIN}/api/auth/google/callback` || 'http://localhost:3000/api/auth/google/callback';
+    const redirectUri = process.env.DOMAIN
+        ? `${process.env.DOMAIN}/api/auth/google/callback`
+        : 'http://localhost:3000/api/auth/google/callback';
 
     // Robustly clean credentials
     const clientId = config.clientId.trim().replace(/\/$/, '');

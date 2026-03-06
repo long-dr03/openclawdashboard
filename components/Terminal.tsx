@@ -16,14 +16,17 @@ export function Terminal() {
 
     // Initialize logs only on client (avoids hydration mismatch from Date)
     useEffect(() => {
-        setMounted(true);
-        const now = () => new Date().toLocaleTimeString('en-GB', { hour12: false });
-        setLogs([
-            { time: now(), level: 'OK', msg: 'Connected to OpenClaw Gateway on port 18789.' },
-            { time: now(), level: 'INFO', msg: 'CEO Agent online — gemini-3-pro-high — 70,266 tokens used.' },
-            { time: now(), level: 'WARN', msg: 'Sales Bot (sales_bot) — No Telegram token configured!' },
-            { time: now(), level: 'INFO', msg: 'Dashboard UI v4.1 loaded — Production mode.' },
-        ]);
+        const handle = requestAnimationFrame(() => {
+            const now = () => new Date().toLocaleTimeString('en-GB', { hour12: false });
+            setLogs([
+                { time: now(), level: 'OK', msg: 'Connected to OpenClaw Gateway on port 18789.' },
+                { time: now(), level: 'INFO', msg: 'CEO Agent online — gemini-3-pro-high — 70,266 tokens used.' },
+                { time: now(), level: 'WARN', msg: 'Sales Bot (sales_bot) — No Telegram token configured!' },
+                { time: now(), level: 'INFO', msg: 'Dashboard UI v4.1 loaded — Production mode.' },
+            ]);
+            setMounted(true);
+        });
+        return () => cancelAnimationFrame(handle);
     }, []);
 
     // Simulate live logs
