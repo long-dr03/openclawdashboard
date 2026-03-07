@@ -201,21 +201,21 @@ export default function DevOpsPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-white flex items-center">
+                    <h1 className="text-2xl font-bold text-[var(--text-main)] flex items-center">
                         <Server size={28} className="mr-3 text-red-400" />
                         DevOps Monitoring Center
                     </h1>
-                    <p className="text-slate-500 text-sm mt-1">
+                    <p className="text-[var(--text-dim)] text-sm mt-1">
                         🛡️ System Guardian — Real-time infrastructure & Agent monitoring
-                        {systemStats && <span className="ml-2 text-slate-600 font-mono">({systemStats.hostname} / {systemStats.platform})</span>}
+                        {systemStats && <span className="ml-2 text-[var(--text-muted)] font-mono">({systemStats.hostname} / {systemStats.platform})</span>}
                     </p>
                 </div>
                 <div className="flex items-center space-x-3">
-                    <div className="flex bg-black/30 p-1 rounded-lg border border-white/5 mr-2">
-                        <button onClick={() => setActiveTab('system')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === 'system' ? 'bg-red-500/20 text-red-400' : 'text-slate-400 hover:text-white'}`}>System Health</button>
-                        <button onClick={() => setActiveTab('agents')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === 'agents' ? 'bg-blue-500/20 text-blue-400' : 'text-slate-400 hover:text-white'}`}>Agent Config</button>
+                    <div className="flex bg-[var(--bg-main)] p-1 rounded-lg border border-[var(--border-main)] mr-2">
+                        <button onClick={() => setActiveTab('system')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === 'system' ? 'bg-red-500/20 text-red-400' : 'text-[var(--text-dim)] hover:text-[var(--text-main)]'}`}>System Health</button>
+                        <button onClick={() => setActiveTab('agents')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === 'agents' ? 'bg-blue-500/20 text-blue-400' : 'text-[var(--text-dim)] hover:text-[var(--text-main)]'}`}>Agent Config</button>
                     </div>
-                    <span className="text-xs text-slate-500 font-mono hidden lg:inline">Auto-refresh 15s · Last: {lastRefresh || '--:--:--'}</span>
+                    <span className="text-xs text-[var(--text-muted)] font-mono hidden lg:inline">Auto-refresh 15s · Last: {lastRefresh || '--:--:--'}</span>
                     <button onClick={fetchAll} disabled={loading} className="flex items-center px-4 py-2 bg-blue-600/10 text-blue-400 border border-blue-600/20 rounded-lg text-sm hover:bg-blue-600/20 transition-colors disabled:opacity-50">
                         <RefreshCw size={14} className={`mr-2 ${loading ? 'animate-spin' : ''}`} /> Refresh
                     </button>
@@ -230,11 +230,11 @@ export default function DevOpsPage() {
             {alerts.filter(a => a.severity !== 'info').length > 0 && (
                 <div className="mb-6 space-y-2">
                     {alerts.filter(a => a.severity !== 'info').map((alert, idx) => (
-                        <div key={idx} className={`border-l-2 rounded-r-lg px-4 py-3 flex items-center space-x-3 ${alertColors[alert.severity]}`}>
+                        <div key={idx} className={`border-l-2 rounded-r-lg px-4 py-3 flex items-center space-x-3 ${alertColors[alert.severity]} border border-[var(--border-main)] shadow-sm`}>
                             {alert.severity === 'critical' ? <XCircle size={16} className="text-red-400 shrink-0" /> : <AlertTriangle size={16} className="text-amber-400 shrink-0" />}
-                            <span className="text-sm text-slate-200">{alert.msg}</span>
+                            <span className="text-sm text-[var(--text-main)]">{alert.msg}</span>
                             {alert.value !== undefined && alert.threshold !== undefined && (
-                                <span className="text-xs text-slate-500 ml-auto font-mono">{alert.value}% / threshold: {alert.threshold}%</span>
+                                <span className="text-xs text-[var(--text-dim)] ml-auto font-mono">{alert.value}% / threshold: {alert.threshold}%</span>
                             )}
                         </div>
                     ))}
@@ -244,51 +244,51 @@ export default function DevOpsPage() {
             {/* Row 1: Resource Gauges */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 mb-6">
                 {/* CPU */}
-                <div className="bg-[#16181e] border border-white/5 rounded-xl p-5">
+                <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center"><Cpu size={16} className="mr-2 text-cyan-400" /><span className="font-bold text-white text-sm">CPU</span></div>
+                        <div className="flex items-center"><Cpu size={16} className="mr-2 text-cyan-400" /><span className="font-bold text-[var(--text-main)] text-sm">CPU</span></div>
                         <span className={`text-lg font-bold font-mono ${(systemStats?.cpu.usage || 0) > 90 ? 'text-red-400' : (systemStats?.cpu.usage || 0) > 70 ? 'text-amber-400' : 'text-cyan-400'}`}>
                             {systemStats?.cpu.usage || 0}%
                         </span>
                     </div>
                     <GaugeBar value={systemStats?.cpu.usage || 0} label="Utilization" unit="%" color="bg-cyan-500" />
-                    <p className="text-[10px] text-slate-600 mt-2 truncate">{systemStats?.cpu.cores || 0} cores · {systemStats?.cpu.model?.substring(0, 35) || 'Unknown'}</p>
+                    <p className="text-[10px] text-[var(--text-muted)] mt-2 truncate">{systemStats?.cpu.cores || 0} cores · {systemStats?.cpu.model?.substring(0, 35) || 'Unknown'}</p>
                 </div>
 
                 {/* RAM */}
-                <div className="bg-[#16181e] border border-white/5 rounded-xl p-5">
+                <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center"><MemoryStick size={16} className="mr-2 text-purple-400" /><span className="font-bold text-white text-sm">RAM</span></div>
+                        <div className="flex items-center"><MemoryStick size={16} className="mr-2 text-purple-400" /><span className="font-bold text-[var(--text-main)] text-sm">RAM</span></div>
                         <span className={`text-lg font-bold font-mono ${(systemStats?.ram.usagePercent || 0) > 90 ? 'text-red-400' : 'text-purple-400'}`}>
                             {systemStats?.ram.usagePercent || 0}%
                         </span>
                     </div>
                     <GaugeBar value={systemStats?.ram.usagePercent || 0} label="Usage" unit="%" color="bg-purple-500" max={`${Math.round((systemStats?.ram.total || 0) / 1024)} GB`} />
-                    <p className="text-[10px] text-slate-600 mt-2">{Math.round((systemStats?.ram.used || 0) / 1024)} / {Math.round((systemStats?.ram.total || 0) / 1024)} GB used</p>
+                    <p className="text-[10px] text-[var(--text-muted)] mt-2">{Math.round((systemStats?.ram.used || 0) / 1024)} / {Math.round((systemStats?.ram.total || 0) / 1024)} GB used</p>
                 </div>
 
                 {/* Disk */}
-                <div className="bg-[#16181e] border border-white/5 rounded-xl p-5">
+                <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center"><HardDrive size={16} className="mr-2 text-emerald-400" /><span className="font-bold text-white text-sm">Disk</span></div>
+                        <div className="flex items-center"><HardDrive size={16} className="mr-2 text-emerald-400" /><span className="font-bold text-[var(--text-main)] text-sm">Disk</span></div>
                         <span className={`text-lg font-bold font-mono ${(systemStats?.disk?.usagePercent || 0) > 90 ? 'text-red-400' : 'text-emerald-400'}`}>
                             {systemStats?.disk?.usagePercent || 0}%
                         </span>
                     </div>
                     <GaugeBar value={systemStats?.disk.usagePercent || 0} label="Usage" unit="%" color="bg-emerald-500" max={`${systemStats?.disk.total || 0} GB`} />
-                    <p className="text-[10px] text-slate-600 mt-2">{systemStats?.disk.used || 0} / {systemStats?.disk.total || 0} GB used</p>
+                    <p className="text-[10px] text-[var(--text-muted)] mt-2">{systemStats?.disk.used || 0} / {systemStats?.disk.total || 0} GB used</p>
                 </div>
 
                 {/* Uptime */}
-                <div className="bg-[#16181e] border border-white/5 rounded-xl p-5">
+                <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center"><Clock size={16} className="mr-2 text-amber-400" /><span className="font-bold text-white text-sm">Uptime</span></div>
+                        <div className="flex items-center"><Clock size={16} className="mr-2 text-amber-400" /><span className="font-bold text-[var(--text-main)] text-sm">Uptime</span></div>
                         <span className="text-lg font-bold font-mono text-amber-400">{systemStats ? formatUptime(systemStats.uptime) : '--'}</span>
                     </div>
                     <div className="space-y-1.5 text-xs">
-                        <div className="flex justify-between"><span className="text-slate-500">Host</span><span className="text-slate-300 font-mono">{systemStats?.hostname || '--'}</span></div>
-                        <div className="flex justify-between"><span className="text-slate-500">Platform</span><span className="text-slate-300 font-mono">{systemStats?.platform || '--'}</span></div>
-                        <div className="flex justify-between"><span className="text-slate-500">PM2 Procs</span><span className="text-slate-300 font-mono">{pm2Data.length}</span></div>
+                        <div className="flex justify-between"><span className="text-[var(--text-dim)]">Host</span><span className="text-[var(--text-main)] font-mono">{systemStats?.hostname || '--'}</span></div>
+                        <div className="flex justify-between"><span className="text-[var(--text-dim)]">Platform</span><span className="text-[var(--text-main)] font-mono">{systemStats?.platform || '--'}</span></div>
+                        <div className="flex justify-between"><span className="text-[var(--text-dim)]">PM2 Procs</span><span className="text-[var(--text-main)] font-mono">{pm2Data.length}</span></div>
                     </div>
                 </div>
             </div>
@@ -296,33 +296,33 @@ export default function DevOpsPage() {
             {/* Row 2: Service Health + Alerts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 {/* Service Health */}
-                <div className="bg-[#16181e] border border-white/5 rounded-xl p-5">
+                <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-white text-sm flex items-center"><Activity size={16} className="mr-2 text-emerald-400" /> Service Health</h3>
-                        <span className="text-xs text-slate-500">{services.filter(s => s.status === 'online').length}/{services.length} online</span>
+                        <h3 className="font-bold text-[var(--text-main)] text-sm flex items-center"><Activity size={16} className="mr-2 text-emerald-400" /> Service Health</h3>
+                        <span className="text-xs text-[var(--text-dim)]">{services.filter(s => s.status === 'online').length}/{services.length} online</span>
                     </div>
                     <div className="space-y-2">
                         {services.length === 0 ? (
-                            <p className="text-center py-4 text-slate-600 text-sm">Loading services...</p>
+                            <p className="text-center py-4 text-[var(--text-muted)] text-sm">Loading services...</p>
                         ) : services.map((svc, idx) => {
                             const Icon = serviceIcons[svc.name] || Server;
                             return (
-                                <div key={idx} className="flex items-center justify-between px-3 py-2.5 bg-black/20 rounded-lg">
+                                <div key={idx} className="flex items-center justify-between px-3 py-2.5 bg-[var(--bg-main)] rounded-lg border border-[var(--border-main)]">
                                     <div className="flex items-center">
-                                        <Icon size={14} className="mr-3 text-slate-500" />
+                                        <Icon size={14} className="mr-3 text-[var(--text-dim)]" />
                                         <div>
-                                            <p className="text-sm text-white font-medium">{svc.name}</p>
-                                            <p className="text-[10px] text-slate-500">{svc.info}</p>
+                                            <p className="text-sm text-[var(--text-main)] font-medium">{svc.name}</p>
+                                            <p className="text-[10px] text-[var(--text-muted)]">{svc.info}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                        {svc.latency && <span className="text-[10px] text-slate-500 font-mono">{svc.latency}ms</span>}
+                                        {svc.latency && <span className="text-[10px] text-[var(--text-muted)] font-mono">{svc.latency}ms</span>}
                                         {svc.status === 'online' ? (
                                             <span className="flex items-center text-[10px] font-bold text-emerald-400"><CheckCircle2 size={12} className="mr-1" />ONLINE</span>
                                         ) : svc.status === 'offline' ? (
                                             <span className="flex items-center text-[10px] font-bold text-red-400"><XCircle size={12} className="mr-1" />OFFLINE</span>
                                         ) : (
-                                            <span className="flex items-center text-[10px] font-bold text-slate-500">UNKNOWN</span>
+                                            <span className="flex items-center text-[10px] font-bold text-[var(--text-muted)]">UNKNOWN</span>
                                         )}
                                     </div>
                                 </div>
@@ -332,21 +332,21 @@ export default function DevOpsPage() {
                 </div>
 
                 {/* Alert History */}
-                <div className="bg-[#16181e] border border-white/5 rounded-xl p-5">
+                <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-white text-sm flex items-center"><AlertTriangle size={16} className="mr-2 text-amber-400" /> Threshold Alerts</h3>
+                        <h3 className="font-bold text-[var(--text-main)] text-sm flex items-center"><AlertTriangle size={16} className="mr-2 text-amber-400" /> Threshold Alerts</h3>
                         <span className={`text-xs px-2 py-0.5 rounded-full ${alerts.filter(a => a.severity === 'critical').length > 0 ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
                             {alerts.filter(a => a.severity === 'critical').length > 0 ? `${alerts.filter(a => a.severity === 'critical').length} critical` : 'All clear'}
                         </span>
                     </div>
                     <div className="space-y-2">
                         {alerts.map((alert, idx) => (
-                            <div key={idx} className={`border-l-2 rounded-r-lg px-4 py-2.5 ${alertColors[alert.severity]}`}>
-                                <p className="text-sm text-slate-200">{alert.msg}</p>
+                            <div key={idx} className={`border-l-2 rounded-r-lg px-4 py-2.5 ${alertColors[alert.severity]} border border-[var(--border-main)]`}>
+                                <p className="text-sm text-[var(--text-main)]">{alert.msg}</p>
                             </div>
                         ))}
                     </div>
-                    <div className="mt-4 pt-3 border-t border-white/5 text-[10px] text-slate-600">
+                    <div className="mt-4 pt-3 border-t border-[var(--border-main)] text-[10px] text-[var(--text-muted)]">
                         Thresholds: CPU &gt; 90% (critical) · RAM &gt; 90% · Disk &gt; 90% · Service offline = critical alert
                     </div>
                 </div>
@@ -355,25 +355,25 @@ export default function DevOpsPage() {
             {/* Row 3: PM2 + Docker Tables */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 {/* PM2 */}
-                <div className="bg-[#16181e] border border-white/5 rounded-xl overflow-hidden">
-                    <div className="p-4 border-b border-white/5 flex items-center justify-between bg-black/20">
-                        <h3 className="font-bold text-white text-sm flex items-center"><Server size={16} className="mr-2 text-emerald-400" /> PM2 Processes</h3>
+                <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl overflow-hidden shadow-sm">
+                    <div className="p-4 border-b border-[var(--border-main)] flex items-center justify-between bg-[var(--bg-main)]">
+                        <h3 className="font-bold text-[var(--text-main)] text-sm flex items-center"><Server size={16} className="mr-2 text-emerald-400" /> PM2 Processes</h3>
                         <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono">{pm2Data.filter(p => p.pm2_env?.status === 'online').length}/{pm2Data.length}</span>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-xs">
-                            <thead><tr className="bg-black/20 text-slate-500 uppercase tracking-wider">
+                            <thead><tr className="bg-[var(--bg-main)] text-[var(--text-dim)] uppercase tracking-wider">
                                 <th className="text-left px-3 py-2">Name</th><th className="text-left px-3 py-2">Status</th><th className="text-left px-3 py-2">Uptime</th><th className="text-left px-3 py-2">Mem</th><th className="text-left px-3 py-2">CPU</th>
                             </tr></thead>
                             <tbody>
-                                {pm2Data.length === 0 ? <tr><td colSpan={5} className="text-center py-6 text-slate-600">No PM2 processes</td></tr> :
+                                {pm2Data.length === 0 ? <tr><td colSpan={5} className="text-center py-6 text-[var(--text-muted)]">No PM2 processes</td></tr> :
                                 pm2Data.map(p => (
-                                    <tr key={p.pm_id} className="border-t border-white/5 hover:bg-white/[0.02]">
-                                        <td className="px-3 py-2 font-bold text-white">{p.name}</td>
+                                    <tr key={p.pm_id} className="border-t border-[var(--border-main)] hover:bg-[var(--bg-main)] transition-colors">
+                                        <td className="px-3 py-2 font-bold text-[var(--text-main)]">{p.name}</td>
                                         <td className="px-3 py-2"><span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${p.pm2_env?.status === 'online' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>{p.pm2_env?.status}</span></td>
-                                        <td className="px-3 py-2 text-slate-400 font-mono">{formatProcUptime(p.pm2_env?.pm_uptime)}</td>
-                                        <td className="px-3 py-2 text-slate-400">{p.monit ? (p.monit.memory / 1024 / 1024).toFixed(0) : 0} MB</td>
-                                        <td className="px-3 py-2 text-slate-400">{p.monit?.cpu || 0}%</td>
+                                        <td className="px-3 py-2 text-[var(--text-dim)] font-mono">{formatProcUptime(p.pm2_env?.pm_uptime)}</td>
+                                        <td className="px-3 py-2 text-[var(--text-dim)]">{p.monit ? (p.monit.memory / 1024 / 1024).toFixed(0) : 0} MB</td>
+                                        <td className="px-3 py-2 text-[var(--text-dim)]">{p.monit?.cpu || 0}%</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -382,24 +382,24 @@ export default function DevOpsPage() {
                 </div>
 
                 {/* Docker */}
-                <div className="bg-[#16181e] border border-white/5 rounded-xl overflow-hidden">
-                    <div className="p-4 border-b border-white/5 flex items-center justify-between bg-black/20">
-                        <h3 className="font-bold text-white text-sm flex items-center"><Container size={16} className="mr-2 text-blue-400" /> Docker</h3>
+                <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl overflow-hidden shadow-sm">
+                    <div className="p-4 border-b border-[var(--border-main)] flex items-center justify-between bg-[var(--bg-main)]">
+                        <h3 className="font-bold text-[var(--text-main)] text-sm flex items-center"><Container size={16} className="mr-2 text-blue-400" /> Docker</h3>
                         {dockerOffline && <span className="text-xs px-2 py-0.5 rounded bg-red-500/10 text-red-400">Offline</span>}
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-xs">
-                            <thead><tr className="bg-black/20 text-slate-500 uppercase tracking-wider">
+                            <thead><tr className="bg-[var(--bg-main)] text-[var(--text-dim)] uppercase tracking-wider">
                                 <th className="text-left px-3 py-2">Name</th><th className="text-left px-3 py-2">Image</th><th className="text-left px-3 py-2">Status</th>
                             </tr></thead>
                             <tbody>
                                 {dockerData.length === 0 ? (
-                                    <tr><td colSpan={3} className="text-center py-6 text-slate-600">{dockerOffline ? '🐳 Docker Desktop is not running' : 'No containers'}</td></tr>
+                                    <tr><td colSpan={3} className="text-center py-6 text-[var(--text-muted)]">{dockerOffline ? '🐳 Docker Desktop is not running' : 'No containers'}</td></tr>
                                 ) : dockerData.map(c => (
-                                    <tr key={c.id} className="border-t border-white/5 hover:bg-white/[0.02]">
-                                        <td className="px-3 py-2 font-bold text-white">{c.names}</td>
-                                        <td className="px-3 py-2 text-slate-400">{c.image}</td>
-                                        <td className="px-3 py-2"><span className="bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded text-[9px]">{c.status}</span></td>
+                                    <tr key={c.id} className="border-t border-[var(--border-main)] hover:bg-[var(--bg-main)] transition-colors">
+                                        <td className="px-3 py-2 font-bold text-[var(--text-main)]">{c.names}</td>
+                                        <td className="px-3 py-2 text-[var(--text-dim)]">{c.image}</td>
+                                        <td className="px-3 py-2"><span className="bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded text-[9px]">{c.status}</span></td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -409,10 +409,10 @@ export default function DevOpsPage() {
             </div>
 
             {/* Row 4: Diagnostic Shell */}
-            <div className="bg-[#16181e] border border-white/5 rounded-xl overflow-hidden">
-                <div className="p-4 border-b border-white/5 flex items-center justify-between bg-black/20">
-                    <h3 className="font-bold text-white text-sm flex items-center"><TermIcon size={16} className="mr-2 text-amber-400" /> Diagnostic Shell</h3>
-                    <span className="text-[10px] text-slate-500">Whitelisted commands only · Safe execution</span>
+            <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl overflow-hidden shadow-sm">
+                <div className="p-4 border-b border-[var(--border-main)] flex items-center justify-between bg-[var(--bg-main)]">
+                    <h3 className="font-bold text-[var(--text-main)] text-sm flex items-center"><TermIcon size={16} className="mr-2 text-amber-400" /> Diagnostic Shell</h3>
+                    <span className="text-[10px] text-[var(--text-muted)]">Whitelisted commands only · Safe execution</span>
                 </div>
                 <div className="p-4">
                     {/* Command Buttons */}
@@ -422,7 +422,7 @@ export default function DevOpsPage() {
                                 key={cmd.id}
                                 onClick={() => runDiagnostic(cmd.id, cmd.label)}
                                 disabled={diagRunning}
-                                className="flex items-center px-3 py-1.5 bg-black/30 border border-white/5 rounded-lg text-xs text-slate-300 hover:bg-amber-500/10 hover:border-amber-500/20 hover:text-amber-400 transition-colors disabled:opacity-30"
+                                className="flex items-center px-3 py-1.5 bg-[var(--bg-main)] border border-[var(--border-main)] rounded-lg text-xs text-[var(--text-dim)] hover:bg-amber-500/10 hover:border-amber-500/20 hover:text-amber-400 transition-colors disabled:opacity-30"
                             >
                                 <Play size={10} className="mr-1.5" />
                                 {cmd.label}
@@ -430,12 +430,12 @@ export default function DevOpsPage() {
                         ))}
                     </div>
                     {/* Output */}
-                    <div className="relative bg-[#0a0c10] rounded-lg p-4 font-mono text-xs text-slate-300 h-48 overflow-y-auto whitespace-pre-wrap">
+                    <div className="relative bg-[var(--bg-input)] rounded-lg p-4 font-mono text-xs text-[var(--text-main)] h-48 overflow-y-auto whitespace-pre-wrap border border-[var(--border-main)]">
                         <div className="scanline"></div>
                         {diagOutput ? (
-                            <pre>{diagOutput}</pre>
+                            <pre className="relative z-10">{diagOutput}</pre>
                         ) : (
-                            <p className="text-slate-600 text-center py-12">Click a command above to run diagnostics...</p>
+                            <p className="text-[var(--text-muted)] text-center py-12 relative z-10">Click a command above to run diagnostics...</p>
                         )}
                     </div>
                 </div>

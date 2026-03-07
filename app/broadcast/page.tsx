@@ -156,23 +156,23 @@ export default function BroadcastPage() {
 
             {/* Header */}
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-white flex items-center">
+                <h1 className="text-2xl font-bold text-[var(--text-main)] flex items-center">
                     <Radio size={28} className="mr-3 text-purple-400" />
                     Broadcast Center
                 </h1>
-                <p className="text-slate-500 text-sm mt-1">Send messages and notifications to your agent fleet</p>
+                <p className="text-[var(--text-dim)] text-sm mt-1">Send messages and notifications to your agent fleet</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Compose Panel */}
-                <div className="lg:col-span-2 bg-[#16181e] border border-white/5 rounded-xl p-5">
-                    <h3 className="font-bold text-white text-sm mb-4 flex items-center">
+                <div className="lg:col-span-2 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl p-5 shadow-sm">
+                    <h3 className="font-bold text-[var(--text-main)] text-sm mb-4 flex items-center">
                         <Send size={16} className="mr-2 text-blue-400" /> Soạn Broadcast
                     </h3>
 
                     {/* Agent Selection */}
                     <div className="mb-4">
-                        <label className="text-xs text-slate-400 mb-2 block">Chọn Agents nhận thông báo:</label>
+                        <label className="text-xs text-[var(--text-dim)] mb-2 block">Chọn Agents nhận thông báo:</label>
                         <div className="space-y-1.5 max-h-36 overflow-y-auto">
                             {agents.map(agent => (
                                 <div
@@ -180,17 +180,17 @@ export default function BroadcastPage() {
                                     onClick={() => toggleAgent(agent.id)}
                                     className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors border ${selectedAgents.has(agent.id)
                                         ? 'bg-blue-500/10 border-blue-500/20'
-                                        : 'bg-black/20 border-transparent hover:bg-white/5'
+                                        : 'bg-[var(--bg-main)] border-transparent hover:bg-[var(--border-main)]'
                                         }`}
                                 >
                                     <div className="flex items-center">
-                                        <div className={`w-4 h-4 rounded border mr-3 flex items-center justify-center text-[9px] ${selectedAgents.has(agent.id) ? 'bg-blue-500 border-blue-500 text-white' : 'border-slate-600'
+                                        <div className={`w-4 h-4 rounded border mr-3 flex items-center justify-center text-[9px] ${selectedAgents.has(agent.id) ? 'bg-blue-500 border-blue-500 text-white' : 'border-[var(--text-muted)]'
                                             }`}>
                                             {selectedAgents.has(agent.id) && '✓'}
                                         </div>
                                         <div>
-                                            <span className="text-sm text-white">{agent.name}</span>
-                                            <span className="text-xs text-slate-500 ml-2">{agent.role} · {agent.model}</span>
+                                            <span className="text-sm text-[var(--text-main)]">{agent.name}</span>
+                                            <span className="text-xs text-[var(--text-dim)] ml-2">{agent.role} · {agent.model}</span>
                                             {agent.telegramConnected && <span className="text-[9px] ml-1.5 px-1 rounded bg-blue-500/10 text-blue-400">📱TG</span>}
                                             {agent.zaloConnected && <span className="text-[9px] ml-1 px-1 rounded bg-cyan-500/10 text-cyan-400">💬Zalo</span>}
                                         </div>
@@ -202,18 +202,18 @@ export default function BroadcastPage() {
                         </div>
                         <div className="flex items-center space-x-3 mt-2">
                             <button onClick={() => selectAllAgents(true)} className="text-xs text-blue-400 hover:underline">✓✓ Chọn tất cả</button>
-                            <button onClick={() => selectAllAgents(false)} className="text-xs text-slate-500 hover:underline">☐ Bỏ chọn</button>
+                            <button onClick={() => selectAllAgents(false)} className="text-xs text-[var(--text-dim)] hover:underline">☐ Bỏ chọn</button>
                         </div>
                     </div>
 
                     {/* Priority */}
                     <div className="mb-4">
-                        <label className="text-xs text-slate-400 mb-2 block">Mức độ ưu tiên:</label>
+                        <label className="text-xs text-[var(--text-dim)] mb-2 block">Mức độ ưu tiên:</label>
                         <div className="flex items-center space-x-2">
                             {priorityOptions.map(opt => (
                                 <label key={opt.value} className="cursor-pointer">
                                     <input type="radio" name="priority" value={opt.value} checked={priority === opt.value} onChange={e => setPriority(e.target.value)} className="sr-only" />
-                                    <span className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${priority === opt.value ? opt.color : 'bg-black/20 text-slate-500 border-transparent'}`}>
+                                    <span className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${priority === opt.value ? opt.color : 'bg-[var(--bg-main)] text-[var(--text-dim)] border-transparent'}`}>
                                         {opt.label}
                                     </span>
                                 </label>
@@ -223,8 +223,8 @@ export default function BroadcastPage() {
 
                     {/* Template */}
                     <div className="mb-4">
-                        <label className="text-xs text-slate-400 mb-1 block">Template nhanh:</label>
-                        <select onChange={e => applyTemplate(e.target.value)} className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+                        <label className="text-xs text-[var(--text-dim)] mb-1 block">Template nhanh:</label>
+                        <select onChange={e => applyTemplate(e.target.value)} className="w-full bg-[var(--bg-input)] border border-[var(--border-main)] rounded-lg px-3 py-2 text-sm text-[var(--text-main)] focus:outline-none focus:border-blue-500/50">
                             <option value="">— Chọn template —</option>
                             <option value="maintenance">🔧 Bảo trì hệ thống</option>
                             <option value="update">🚀 Cập nhật hệ thống</option>
@@ -237,31 +237,31 @@ export default function BroadcastPage() {
 
                     {/* Subject */}
                     <div className="mb-4">
-                        <label className="text-xs text-slate-400 mb-1 block">Tiêu đề:</label>
+                        <label className="text-xs text-[var(--text-dim)] mb-1 block">Tiêu đề:</label>
                         <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
                             placeholder="Nhập tiêu đề thông báo..."
-                            className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50" />
+                            className="w-full bg-[var(--bg-input)] border border-[var(--border-main)] rounded-lg px-4 py-2.5 text-sm text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none focus:border-blue-500/50" />
                     </div>
 
                     {/* Target Telegram ID */}
                     <div className="mb-4">
-                        <label className="text-xs text-slate-400 mb-1 block">Target Telegram ID (Optional):</label>
+                        <label className="text-xs text-[var(--text-dim)] mb-1 block">Target Telegram ID (Optional):</label>
                         <input type="text" value={targetId} onChange={e => setTargetId(e.target.value)}
                             placeholder="Nhập Chat ID (nếu gửi riêng)..."
-                            className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50" />
+                            className="w-full bg-[var(--bg-input)] border border-[var(--border-main)] rounded-lg px-4 py-2.5 text-sm text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none focus:border-blue-500/50" />
                     </div>
 
                     {/* Message */}
                     <div className="mb-4">
-                        <label className="text-xs text-slate-400 mb-1 block">Nội dung:</label>
-                        <div className="border border-white/10 rounded-lg overflow-hidden">
-                            <div className="flex items-center space-x-1 px-3 py-2 bg-black/30 border-b border-white/5">
-                                <button onClick={() => insertFormat('**', '**')} className="p-1.5 rounded hover:bg-white/10 text-slate-400"><Bold size={14} /></button>
-                                <button onClick={() => insertFormat('_', '_')} className="p-1.5 rounded hover:bg-white/10 text-slate-400"><Italic size={14} /></button>
-                                <button onClick={() => insertFormat('`', '`')} className="p-1.5 rounded hover:bg-white/10 text-slate-400"><Code size={14} /></button>
-                                <button onClick={() => insertFormat('\n- ', '')} className="p-1.5 rounded hover:bg-white/10 text-slate-400"><List size={14} /></button>
-                                <div className="w-px h-4 bg-white/10 mx-1"></div>
-                                <button onClick={() => insertFormat('👉 ', '')} className="p-1.5 rounded hover:bg-white/10 text-slate-400"><Smile size={14} /></button>
+                        <label className="text-xs text-[var(--text-dim)] mb-1 block">Nội dung:</label>
+                        <div className="border border-[var(--border-main)] rounded-lg overflow-hidden">
+                            <div className="flex items-center space-x-1 px-3 py-2 bg-[var(--bg-main)] border-b border-[var(--border-main)]">
+                                <button onClick={() => insertFormat('**', '**')} className="p-1.5 rounded hover:bg-[var(--border-main)] text-[var(--text-dim)]"><Bold size={14} /></button>
+                                <button onClick={() => insertFormat('_', '_')} className="p-1.5 rounded hover:bg-[var(--border-main)] text-[var(--text-dim)]"><Italic size={14} /></button>
+                                <button onClick={() => insertFormat('`', '`')} className="p-1.5 rounded hover:bg-[var(--border-main)] text-[var(--text-dim)]"><Code size={14} /></button>
+                                <button onClick={() => insertFormat('\n- ', '')} className="p-1.5 rounded hover:bg-[var(--border-main)] text-[var(--text-dim)]"><List size={14} /></button>
+                                <div className="w-px h-4 bg-[var(--border-main)] mx-1"></div>
+                                <button onClick={() => insertFormat('👉 ', '')} className="p-1.5 rounded hover:bg-[var(--border-main)] text-[var(--text-dim)]"><Smile size={14} /></button>
                             </div>
                             <textarea
                                 id="broadcast-message"
@@ -269,15 +269,15 @@ export default function BroadcastPage() {
                                 onChange={e => setMessage(e.target.value)}
                                 placeholder="Nhập nội dung thông báo cho các agents..."
                                 rows={6}
-                                className="w-full bg-[#0a0c10] px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none resize-none"
+                                className="w-full bg-[var(--bg-input)] px-4 py-3 text-sm text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none resize-none"
                             />
-                            <div className="px-3 py-1.5 bg-black/20 text-xs text-slate-600">{message.length} ký tự</div>
+                            <div className="px-3 py-1.5 bg-[var(--bg-main)] text-xs text-[var(--text-muted)]">{message.length} ký tự</div>
                         </div>
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center justify-end space-x-3 pt-3 border-t border-white/5">
-                        <button onClick={clearForm} className="flex items-center px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-colors">
+                    <div className="flex items-center justify-end space-x-3 pt-3 border-t border-[var(--border-main)]">
+                        <button onClick={clearForm} className="flex items-center px-4 py-2 rounded-lg text-sm text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-main)] transition-colors">
                             <Eraser size={14} className="mr-2" /> Xóa form
                         </button>
                         <button
@@ -291,29 +291,29 @@ export default function BroadcastPage() {
                 </div>
 
                 {/* History Panel */}
-                <div className="bg-[#16181e] border border-white/5 rounded-xl p-5">
+                <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-white text-sm flex items-center">
-                            <Clock size={16} className="mr-2 text-slate-400" /> Lịch sử Broadcast
+                        <h3 className="font-bold text-[var(--text-main)] text-sm flex items-center">
+                            <Clock size={16} className="mr-2 text-[var(--text-dim)]" /> Lịch sử Broadcast
                         </h3>
-                        <span className="text-xs text-slate-500">{history.length}</span>
+                        <span className="text-xs text-[var(--text-dim)]">{history.length}</span>
                     </div>
                     {history.length === 0 ? (
-                        <div className="text-center py-12 text-slate-600">
+                        <div className="text-center py-12 text-[var(--text-muted)]">
                             <Radio size={32} className="mx-auto mb-2 opacity-20" />
                             <p className="text-sm">Chưa có broadcast nào</p>
                         </div>
                     ) : (
                         <div className="space-y-3">
                             {history.map(h => (
-                                <div key={h.id} className="bg-black/20 rounded-lg p-3">
+                                <div key={h.id} className="bg-[var(--bg-main)] rounded-lg p-3 border border-[var(--border-main)]">
                                     <div className="flex items-center justify-between mb-1">
-                                        <span className="text-xs font-bold text-white">#{h.id}</span>
+                                        <span className="text-xs font-bold text-[var(--text-main)]">#{h.id}</span>
                                         <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${h.priority === 'urgent' ? 'bg-red-500/20 text-red-400' : h.priority === 'normal' ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-500/20 text-slate-400'
                                             }`}>{h.priority}</span>
                                     </div>
-                                    <p className="text-sm text-slate-300 truncate">{h.subject}</p>
-                                    <div className="flex items-center justify-between mt-2 text-[10px] text-slate-500">
+                                    <p className="text-sm text-[var(--text-dim)] truncate">{h.subject}</p>
+                                    <div className="flex items-center justify-between mt-2 text-[10px] text-[var(--text-muted)]">
                                         <span>→ {h.targets.length} targets</span>
                                         <span>{h.time}</span>
                                     </div>

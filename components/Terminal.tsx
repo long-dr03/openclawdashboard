@@ -65,11 +65,11 @@ export function Terminal() {
     };
 
     return (
-        <div className="bg-[#16181e] border border-white/5 rounded-xl overflow-hidden">
-            <div className="p-4 border-b border-white/5 flex items-center justify-between bg-black/20">
+        <div className="card-panel overflow-hidden">
+            <div className="p-4 border-b border-[var(--border-main)] flex items-center justify-between bg-[var(--bg-main)]/50">
                 <div className="flex items-center">
                     <TermIcon size={18} className="mr-2 text-emerald-400" />
-                    <h3 className="font-bold text-white text-sm">Live System Logs</h3>
+                    <h3 className="font-bold text-[var(--text-main)] text-sm">Live System Logs</h3>
                 </div>
                 <div className="flex items-center space-x-3">
                     <div className="flex items-center space-x-2">
@@ -78,7 +78,7 @@ export function Terminal() {
                     </div>
                     <button 
                         onClick={() => setLogs([])}
-                        className="text-xs text-slate-500 hover:text-white px-2 py-1 rounded hover:bg-white/5 transition-colors"
+                        className="text-xs text-[var(--text-dim)] hover:text-[var(--text-main)] px-2 py-1 rounded hover:bg-white/5 transition-colors"
                     >
                         Clear
                     </button>
@@ -86,18 +86,18 @@ export function Terminal() {
             </div>
             <div 
                 ref={termRef}
-                className="relative h-48 overflow-y-auto p-4 font-mono text-xs bg-[#0a0c10] space-y-1"
+                className="relative h-48 overflow-y-auto p-4 font-mono text-xs bg-[var(--bg-main)] space-y-1"
             >
                 {/* Scanline effect */}
                 <div className="scanline"></div>
                 {logs.length === 0 ? (
-                    <p className="text-slate-600 text-center py-8">No logs yet...</p>
+                    <p className="text-[var(--text-muted)] text-center py-8">No logs yet...</p>
                 ) : (
                     logs.map((log, idx) => (
                         <div key={idx} className="flex items-start leading-relaxed hover:bg-white/[0.02] px-1 rounded">
-                            <span className="text-slate-600 mr-3 shrink-0">[{log.time}]</span>
+                            <span className="text-[var(--text-muted)] mr-3 shrink-0">[{log.time}]</span>
                             <span className={`font-bold mr-3 shrink-0 w-10 ${levelColors[log.level]}`}>{log.level}</span>
-                            <span className="text-slate-300">{log.msg}</span>
+                            <span className="text-[var(--text-main)]">{log.msg}</span>
                         </div>
                     ))
                 )}

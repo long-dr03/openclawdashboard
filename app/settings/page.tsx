@@ -248,7 +248,7 @@ export default function SettingsPage() {
         return binding?.match?.accountId || null;
     };
 
-    if (loading) return <div className="p-8 text-center text-slate-500">Loading configuration...</div>;
+    if (loading) return <div className="p-8 text-center text-[var(--text-dim)]">Loading configuration...</div>;
 
     return (
         <div className="p-8">
@@ -262,11 +262,11 @@ export default function SettingsPage() {
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
                 <div>
-                    <h1 className="text-2xl font-bold text-white flex items-center">
-                        <Settings size={28} className="mr-3 text-slate-400" />
+                    <h1 className="text-2xl font-bold text-[var(--text-main)] flex items-center">
+                        <Settings size={28} className="mr-3 text-[var(--text-dim)]" />
                         System Configuration
                     </h1>
-                    <p className="text-slate-500 text-sm mt-1">Edit agent configs, tokens, models — saves directly to <code className="text-amber-400/80">config.json</code></p>
+                    <p className="text-[var(--text-dim)] text-sm mt-1">Edit agent configs, tokens, models — saves directly to <code className="text-amber-400/80">config.json</code></p>
                 </div>
                 {dirty && <span className="text-xs px-3 py-1 bg-amber-500/20 text-amber-400 rounded-full border border-amber-500/20">Unsaved changes</span>}
             </div>
@@ -274,12 +274,12 @@ export default function SettingsPage() {
             <div className="max-w-5xl space-y-6">
 
                 {/* ═══════════ Agent Configuration ═══════════ */}
-                <div className="bg-[#16181e] border border-white/5 rounded-xl overflow-hidden">
-                    <div className="p-5 border-b border-white/5 bg-black/20">
-                        <h3 className="font-bold text-white text-sm flex items-center">
+                <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl overflow-hidden shadow-sm">
+                    <div className="p-5 border-b border-[var(--border-main)] bg-[var(--bg-main)]/50">
+                        <h3 className="font-bold text-[var(--text-main)] text-sm flex items-center">
                             <Bot size={16} className="mr-2 text-blue-400" /> Agent Configuration
                         </h3>
-                        <p className="text-[10px] text-slate-500 mt-1">Click an agent to expand and edit its settings</p>
+                        <p className="text-[10px] text-[var(--text-muted)] mt-1">Click an agent to expand and edit its settings</p>
                     </div>
 
                     {agents.map(agent => {
@@ -288,20 +288,20 @@ export default function SettingsPage() {
                         const tgAccount = accountId ? telegramAccounts[accountId] : null;
 
                         return (
-                            <div key={agent.id} className="border-b border-white/5 last:border-b-0">
+                            <div key={agent.id} className="border-b border-[var(--border-main)] last:border-b-0">
                                 {/* Agent Header - Clickable */}
                                 <button
                                     onClick={() => setExpandedAgent(isExpanded ? null : agent.id)}
-                                    className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-white/[0.02] transition-colors text-left"
+                                    className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-[var(--bg-main)] transition-colors text-left"
                                 >
                                     <div className="flex items-center">
-                                        {isExpanded ? <ChevronDown size={14} className="mr-3 text-blue-400" /> : <ChevronRight size={14} className="mr-3 text-slate-500" />}
+                                        {isExpanded ? <ChevronDown size={14} className="mr-3 text-blue-400" /> : <ChevronRight size={14} className="mr-3 text-[var(--text-dim)]" />}
                                         <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center mr-3">
                                             <Bot size={14} className="text-blue-400" />
                                         </div>
                                         <div>
-                                            <span className="text-sm font-medium text-white">{agent.identity?.name || agent.id}</span>
-                                            <span className="text-[10px] text-slate-500 ml-2 font-mono">({agent.id})</span>
+                                            <span className="text-sm font-medium text-[var(--text-main)]">{agent.identity?.name || agent.id}</span>
+                                            <span className="text-[10px] text-[var(--text-muted)] ml-2 font-mono">({agent.id})</span>
                                         </div>
                                     </div>
                                     <div className="flex items-center space-x-3">
@@ -311,37 +311,37 @@ export default function SettingsPage() {
                                         {tgAccount?.botToken ? (
                                             <span className="text-[10px] text-emerald-400">📱 TG</span>
                                         ) : (
-                                            <span className="text-[10px] text-slate-600">⚠️ No TG</span>
+                                            <span className="text-[10px] text-[var(--text-muted)]">⚠️ No TG</span>
                                         )}
                                     </div>
                                 </button>
 
                                 {/* Expanded Editor */}
                                 {isExpanded && (
-                                    <div className="px-5 pb-5 space-y-4 bg-black/10">
+                                    <div className="px-5 pb-5 space-y-4 bg-[var(--bg-main)]/30">
                                         {/* Name */}
                                         <div className="grid grid-cols-3 gap-4 items-center">
-                                            <label className="text-xs text-slate-400">Display Name</label>
+                                            <label className="text-xs text-[var(--text-dim)]">Display Name</label>
                                             <input
                                                 type="text"
                                                 value={agent.identity?.name || ''}
                                                 onChange={e => updateAgent(agent.id, 'name', e.target.value)}
-                                                className="col-span-2 bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50"
+                                                className="col-span-2 bg-[var(--bg-input)] border border-[var(--border-main)] rounded-lg px-3 py-2 text-sm text-[var(--text-main)] focus:outline-none focus:border-blue-500/50"
                                             />
                                         </div>
                                         {/* Workspace */}
                                         <div className="grid grid-cols-3 gap-4 items-center">
-                                            <label className="text-xs text-slate-400">Workspace Path</label>
+                                            <label className="text-xs text-[var(--text-dim)]">Workspace Path</label>
                                             <input
                                                 type="text"
                                                 value={agent.workspace || ''}
                                                 onChange={e => updateAgent(agent.id, 'workspace', e.target.value)}
-                                                className="col-span-2 bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-blue-500/50"
+                                                className="col-span-2 bg-[var(--bg-input)] border border-[var(--border-main)] rounded-lg px-3 py-2 text-sm text-[var(--text-main)] font-mono focus:outline-none focus:border-blue-500/50"
                                             />
                                         </div>
                                         {/* Enabled */}
                                         <div className="grid grid-cols-3 gap-4 items-center">
-                                            <label className="text-xs text-slate-400">Enabled</label>
+                                            <label className="text-xs text-[var(--text-dim)]">Enabled</label>
                                             <div className="col-span-2">
                                                 <button
                                                     onClick={() => updateAgent(agent.id, 'enabled', agent.enabled === false ? true : false)}
@@ -353,11 +353,11 @@ export default function SettingsPage() {
                                         </div>
                                         {/* Model Selector */}
                                         <div className="grid grid-cols-3 gap-4 items-center">
-                                            <label className="text-xs text-slate-400">Agent Model</label>
+                                            <label className="text-xs text-[var(--text-dim)]">Agent Model</label>
                                             <select 
                                                 value={agent.model || ''}
                                                 onChange={e => updateAgent(agent.id, 'model', e.target.value)}
-                                                className="col-span-2 bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50"
+                                                className="col-span-2 bg-[var(--bg-input)] border border-[var(--border-main)] rounded-lg px-3 py-2 text-sm text-[var(--text-main)] focus:outline-none focus:border-blue-500/50"
                                             >
                                                 <option value="">(Default: {defaultModel.split('/').pop()})</option>
                                                 {availableModels.map(m => (
@@ -368,8 +368,8 @@ export default function SettingsPage() {
                                         {/* Telegram Token */}
                                         {accountId && (
                                             <div className="grid grid-cols-3 gap-4 items-center">
-                                                <label className="text-xs text-slate-400">Telegram Bot Token
-                                                    <span className="block text-[10px] text-slate-600">account: {accountId}</span>
+                                                <label className="text-xs text-[var(--text-dim)]">Telegram Bot Token
+                                                    <span className="block text-[10px] text-[var(--text-muted)]">account: {accountId}</span>
                                                 </label>
                                                 <div className="col-span-2 flex items-center space-x-2">
                                                     <input
@@ -377,9 +377,9 @@ export default function SettingsPage() {
                                                         value={tgAccount?.botToken || ''}
                                                         onChange={e => updateTelegramToken(accountId, e.target.value)}
                                                         placeholder="Enter bot token..."
-                                                        className="flex-1 bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-blue-500/50"
+                                                        className="flex-1 bg-[var(--bg-input)] border border-[var(--border-main)] rounded-lg px-3 py-2 text-sm text-[var(--text-main)] font-mono focus:outline-none focus:border-blue-500/50"
                                                     />
-                                                    <button onClick={() => toggleVisibility(`tg-${agent.id}`)} className="p-2 rounded-lg hover:bg-white/5 text-slate-500 hover:text-white">
+                                                    <button onClick={() => toggleVisibility(`tg-${agent.id}`)} className="p-2 rounded-lg hover:bg-[var(--bg-main)] text-[var(--text-muted)] hover:text-[var(--text-main)]">
                                                         {showTokens[`tg-${agent.id}`] ? <EyeOff size={14} /> : <Eye size={14} />}
                                                     </button>
                                                 </div>
@@ -393,46 +393,46 @@ export default function SettingsPage() {
                 </div>
 
                 {/* ═══════════ AI Models ═══════════ */}
-                <div className="bg-[#16181e] border border-white/5 rounded-xl p-5">
-                    <h3 className="font-bold text-white text-sm flex items-center mb-4">
+                <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl p-5 shadow-sm">
+                    <h3 className="font-bold text-[var(--text-main)] text-sm flex items-center mb-4">
                         <Brain size={16} className="mr-2 text-purple-400" /> AI Models
                     </h3>
                     <div className="space-y-4">
                         <div className="grid grid-cols-3 gap-4 items-center">
-                            <label className="text-xs text-slate-400">Default Primary Model</label>
+                            <label className="text-xs text-[var(--text-dim)]">Default Primary Model</label>
                             <input type="text" value={defaultModel} onChange={e => { setDefaultModel(e.target.value); markDirty(); }}
-                                className="col-span-2 bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-blue-500/50" />
+                                className="col-span-2 bg-[var(--bg-input)] border border-[var(--border-main)] rounded-lg px-3 py-2 text-sm text-[var(--text-main)] font-mono focus:outline-none focus:border-blue-500/50" />
                         </div>
                         <div className="grid grid-cols-3 gap-4 items-center">
-                            <label className="text-xs text-slate-400">Max Concurrent Agents</label>
+                            <label className="text-xs text-[var(--text-dim)]">Max Concurrent Agents</label>
                             <input type="number" value={maxConcurrent} onChange={e => { setMaxConcurrent(parseInt(e.target.value) || 1); markDirty(); }} min={1} max={16}
-                                className="col-span-2 w-24 bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none text-center" />
+                                className="col-span-2 w-24 bg-[var(--bg-input)] border border-[var(--border-main)] rounded-lg px-3 py-2 text-sm text-[var(--text-main)] focus:outline-none text-center" />
                         </div>
                         <div className="grid grid-cols-3 gap-4 items-center">
-                            <label className="text-xs text-slate-400">Moonshot Base URL</label>
+                            <label className="text-xs text-[var(--text-dim)]">Moonshot Base URL</label>
                             <input type="text" value={moonshotBaseUrl} onChange={e => { setMoonshotBaseUrl(e.target.value); markDirty(); }}
-                                className="col-span-2 bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-blue-500/50" />
+                                className="col-span-2 bg-[var(--bg-input)] border border-[var(--border-main)] rounded-lg px-3 py-2 text-sm text-[var(--text-main)] font-mono focus:outline-none focus:border-blue-500/50" />
                         </div>
                     </div>
                 </div>
 
                 {/* ═══════════ Gateway ═══════════ */}
-                <div className="bg-[#16181e] border border-white/5 rounded-xl p-5">
-                    <h3 className="font-bold text-white text-sm flex items-center mb-4">
+                <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl p-5 shadow-sm">
+                    <h3 className="font-bold text-[var(--text-main)] text-sm flex items-center mb-4">
                         <Server size={16} className="mr-2 text-blue-400" /> Gateway Configuration
                     </h3>
                     <div className="space-y-4">
                         <div className="grid grid-cols-3 gap-4 items-center">
-                            <label className="text-xs text-slate-400">Port</label>
+                            <label className="text-xs text-[var(--text-dim)]">Port</label>
                             <input type="number" value={gatewayPort} onChange={e => { setGatewayPort(parseInt(e.target.value) || 18789); markDirty(); }}
-                                className="col-span-2 w-32 bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none text-center" />
+                                className="col-span-2 w-32 bg-[var(--bg-input)] border border-[var(--border-main)] rounded-lg px-3 py-2 text-sm text-[var(--text-main)] focus:outline-none text-center" />
                         </div>
                         <div className="grid grid-cols-3 gap-4 items-center">
-                            <label className="text-xs text-slate-400">Auth Token</label>
+                            <label className="text-xs text-[var(--text-dim)]">Auth Token</label>
                             <div className="col-span-2 flex items-center space-x-2">
                                 <input type={showTokens['gw-token'] ? 'text' : 'password'} value={gatewayToken} onChange={e => { setGatewayToken(e.target.value); markDirty(); }}
-                                    className="flex-1 bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-blue-500/50" />
-                                <button onClick={() => toggleVisibility('gw-token')} className="p-2 rounded-lg hover:bg-white/5 text-slate-500 hover:text-white">
+                                    className="flex-1 bg-[var(--bg-input)] border border-[var(--border-main)] rounded-lg px-3 py-2 text-sm text-[var(--text-main)] font-mono focus:outline-none focus:border-blue-500/50" />
+                                <button onClick={() => toggleVisibility('gw-token')} className="p-2 rounded-lg hover:bg-[var(--bg-main)] text-[var(--text-muted)] hover:text-[var(--text-main)]">
                                     {showTokens['gw-token'] ? <EyeOff size={14} /> : <Eye size={14} />}
                                 </button>
                             </div>
@@ -441,48 +441,48 @@ export default function SettingsPage() {
                 </div>
 
                 {/* ═══════════ Telegram Global ═══════════ */}
-                <div className="bg-[#16181e] border border-white/5 rounded-xl p-5">
-                    <h3 className="font-bold text-white text-sm flex items-center mb-4">
+                <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl p-5 shadow-sm">
+                    <h3 className="font-bold text-[var(--text-main)] text-sm flex items-center mb-4">
                         📱 Telegram Global Settings
                     </h3>
                     <div className="grid grid-cols-3 gap-4 items-center">
-                        <label className="text-xs text-slate-400">Allowed User IDs <span className="block text-[10px] text-slate-600">(comma-separated)</span></label>
+                        <label className="text-xs text-[var(--text-dim)]">Allowed User IDs <span className="block text-[10px] text-[var(--text-muted)]">(comma-separated)</span></label>
                         <input type="text" value={allowedUsers} onChange={e => { setAllowedUsers(e.target.value); markDirty(); }}
-                            className="col-span-2 bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-blue-500/50" />
+                            className="col-span-2 bg-[var(--bg-input)] border border-[var(--border-main)] rounded-lg px-3 py-2 text-sm text-[var(--text-main)] font-mono focus:outline-none focus:border-blue-500/50" />
                     </div>
                 </div>
 
                 {/* ═══════════ API Keys ═══════════ */}
-                <div className="bg-[#16181e] border border-white/5 rounded-xl p-5">
-                    <h3 className="font-bold text-white text-sm flex items-center mb-4">
+                <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl p-5 shadow-sm">
+                    <h3 className="font-bold text-[var(--text-main)] text-sm flex items-center mb-4">
                         <Key size={16} className="mr-2 text-amber-400" /> API Keys & Integrations
                     </h3>
                     <div className="space-y-4">
                         <div className="grid grid-cols-3 gap-4 items-center">
-                            <label className="text-xs text-slate-400">Google API Key (Gemini)</label>
+                            <label className="text-xs text-[var(--text-dim)]">Google API Key (Gemini)</label>
                             <div className="col-span-2 flex items-center space-x-2">
                                 <input type={showTokens['google-key'] ? 'text' : 'password'} value={googleApiKey} onChange={e => { setGoogleApiKey(e.target.value); markDirty(); }}
-                                    className="flex-1 bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-blue-500/50" />
-                                <button onClick={() => toggleVisibility('google-key')} className="p-2 rounded-lg hover:bg-white/5 text-slate-500 hover:text-white">
+                                    className="flex-1 bg-[var(--bg-input)] border border-[var(--border-main)] rounded-lg px-3 py-2 text-sm text-[var(--text-main)] font-mono focus:outline-none focus:border-blue-500/50" />
+                                <button onClick={() => toggleVisibility('google-key')} className="p-2 rounded-lg hover:bg-[var(--bg-main)] text-[var(--text-muted)] hover:text-[var(--text-main)]">
                                     {showTokens['google-key'] ? <EyeOff size={14} /> : <Eye size={14} />}
                                 </button>
                             </div>
                         </div>
 
                         {/* Google OAuth */}
-                        <div className="pt-4 border-t border-white/5">
-                            <h4 className="text-xs font-bold text-white mb-3">Google Workspace Integration (Gmail/Calendar)</h4>
+                        <div className="pt-4 border-t border-[var(--border-main)]">
+                            <h4 className="text-xs font-bold text-[var(--text-main)] mb-3">Google Workspace Integration (Gmail/Calendar)</h4>
                             <div className="grid grid-cols-3 gap-4 items-center mb-2">
-                                <label className="text-xs text-slate-400">Client ID</label>
+                                <label className="text-xs text-[var(--text-dim)]">Client ID</label>
                                 <input type="text" value={googleClientId} onChange={e => { setGoogleClientId(e.target.value); markDirty(); }}
-                                    className="col-span-2 bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-blue-500/50" />
+                                    className="col-span-2 bg-[var(--bg-input)] border border-[var(--border-main)] rounded-lg px-3 py-2 text-sm text-[var(--text-main)] font-mono focus:outline-none focus:border-blue-500/50" />
                             </div>
                             <div className="grid grid-cols-3 gap-4 items-center mb-3">
-                                <label className="text-xs text-slate-400">Client Secret</label>
+                                <label className="text-xs text-[var(--text-dim)]">Client Secret</label>
                                 <div className="col-span-2 flex items-center space-x-2">
                                     <input type={showTokens['google-secret'] ? 'text' : 'password'} value={googleClientSecret} onChange={e => { setGoogleClientSecret(e.target.value); markDirty(); }}
-                                        className="flex-1 bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-blue-500/50" />
-                                    <button onClick={() => toggleVisibility('google-secret')} className="p-2 rounded-lg hover:bg-white/5 text-slate-500 hover:text-white">
+                                        className="flex-1 bg-[var(--bg-input)] border border-[var(--border-main)] rounded-lg px-3 py-2 text-sm text-[var(--text-main)] font-mono focus:outline-none focus:border-blue-500/50" />
+                                    <button onClick={() => toggleVisibility('google-secret')} className="p-2 rounded-lg hover:bg-[var(--bg-main)] text-[var(--text-muted)] hover:text-[var(--text-main)]">
                                         {showTokens['google-secret'] ? <EyeOff size={14} /> : <Eye size={14} />}
                                     </button>
                                 </div>
@@ -492,10 +492,10 @@ export default function SettingsPage() {
                                     {isGoogleConnected ? (
                                         <div className="flex items-center space-x-3">
                                             <span className="text-xs text-emerald-400 flex items-center"><Check size={12} className="mr-1" /> Connected</span>
-                                            <button onClick={handleGoogleConnect} className="text-xs text-slate-400 hover:text-white underline">Reconnect</button>
+                                            <button onClick={handleGoogleConnect} className="text-xs text-[var(--text-dim)] hover:text-[var(--text-main)] underline">Reconnect</button>
                                         </div>
                                     ) : (
-                                        <button onClick={handleGoogleConnect} className="flex items-center px-4 py-2 bg-white text-black hover:bg-slate-200 rounded-lg text-xs font-bold transition-colors">
+                                        <button onClick={handleGoogleConnect} className="flex items-center px-4 py-2 bg-[var(--text-main)] text-[var(--bg-main)] hover:opacity-90 rounded-lg text-xs font-bold transition-colors">
                                             <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" /><path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" /><path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" /><path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" /></svg>
                                             Connect Google Account
                                         </button>
@@ -515,12 +515,12 @@ export default function SettingsPage() {
                     <button onClick={handleRestart} className="flex items-center px-4 py-3 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-lg text-sm transition-colors border border-amber-500/20">
                         <RotateCcw size={14} className="mr-2" /> Restart PM2
                     </button>
-                    <button onClick={() => fetchConfig()} className="flex items-center px-4 py-3 bg-slate-700/50 hover:bg-slate-600/50 text-white rounded-lg text-sm transition-colors border border-white/5">
+                    <button onClick={() => fetchConfig()} className="flex items-center px-4 py-3 bg-[var(--bg-card)] hover:bg-[var(--bg-main)] text-[var(--text-main)] rounded-lg text-sm transition-colors border border-[var(--border-main)] shadow-sm">
                         <RotateCcw size={14} className="mr-2" /> Reload
                     </button>
                 </div>
 
-                <p className="text-[10px] text-slate-600 text-center pb-4">Changes are saved to <code>config.json</code>. Click &quot;Restart PM2&quot; to apply changes to running agents.</p>
+                <p className="text-[10px] text-[var(--text-muted)] text-center pb-4">Changes are saved to <code>config.json</code>. Click &quot;Restart PM2&quot; to apply changes to running agents.</p>
             </div>
         </div>
     );

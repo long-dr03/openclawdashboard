@@ -80,11 +80,11 @@ export default function TimelinePage() {
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
                 <div>
-                    <h1 className="text-2xl font-bold text-white flex items-center">
+                    <h1 className="text-2xl font-bold text-[var(--text-main)] flex items-center">
                         <Activity size={28} className="mr-3 text-cyan-400" />
                         Activity Feed
                     </h1>
-                    <p className="text-slate-500 text-sm mt-1">System events, agent activity, and broadcast history</p>
+                    <p className="text-[var(--text-dim)] text-sm mt-1">System events, agent activity, and broadcast history</p>
                 </div>
             </div>
 
@@ -96,7 +96,7 @@ export default function TimelinePage() {
                         onClick={() => setFilter(f.key)}
                         className={`flex items-center px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${filter === f.key
                                 ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                : 'bg-[#16181e] text-slate-500 border-white/5 hover:text-white hover:border-white/10'
+                                : 'bg-[var(--bg-card)] text-[var(--text-dim)] border-[var(--border-main)] hover:text-[var(--text-main)] hover:border-[var(--border-bright)]'
                             }`}
                     >
                         <f.icon size={12} className="mr-1.5" />
@@ -108,7 +108,7 @@ export default function TimelinePage() {
             {/* Timeline */}
             <div className="relative">
                 {/* Timeline line */}
-                <div className="absolute left-6 top-0 bottom-0 w-px bg-white/5"></div>
+                <div className="absolute left-6 top-0 bottom-0 w-px bg-[var(--border-main)]"></div>
 
                 <div className="space-y-4">
                     {filtered.map((event, idx) => {
@@ -121,12 +121,12 @@ export default function TimelinePage() {
                                     <Icon size={13} />
                                 </div>
                                 {/* Content */}
-                                <div className="flex-1 bg-[#16181e] border border-white/5 rounded-xl p-4 hover:bg-[#1a1d24] transition-colors">
+                                <div className="flex-1 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl p-4 hover:bg-[var(--bg-main)] transition-colors shadow-sm">
                                     <div className="flex items-center justify-between mb-1">
-                                        <h4 className="font-bold text-white text-sm">{event.title}</h4>
-                                        <span className="text-[10px] text-slate-500 shrink-0">{formatTime(event.time)}</span>
+                                        <h4 className="font-bold text-[var(--text-main)] text-sm">{event.title}</h4>
+                                        <span className="text-[10px] text-[var(--text-muted)] shrink-0">{formatTime(event.time)}</span>
                                     </div>
-                                    <p className="text-xs text-slate-400">{event.desc}</p>
+                                    <p className="text-xs text-[var(--text-dim)]">{event.desc}</p>
                                 </div>
                             </div>
                         );

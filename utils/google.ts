@@ -59,7 +59,7 @@ export function getOAuthClient() {
     // Standard Next.js redirect URI
     const redirectUri = process.env.DOMAIN
         ? `${process.env.DOMAIN}/api/auth/google/callback`
-        : 'http://localhost:3000/api/auth/google/callback';
+        : 'http://localhost:3001/api/auth/google/callback';
 
     // Robustly clean credentials
     const clientId = config.clientId.trim().replace(/\/$/, '');

@@ -26,11 +26,11 @@ export function StatsCard({ label, value, unit, trend, trendText, trendUp, icon:
     const isUp = trendUp ?? trend === 'up';
     const trendLabel = trendText || trend || '';
     const trendArrow = isUp ? '↑' : trend === 'down' ? '↓' : '—';
-    const trendColor = isUp ? 'text-emerald-400' : trend === 'down' ? 'text-red-400' : 'text-slate-400';
+    const trendColor = isUp ? 'text-emerald-400' : trend === 'down' ? 'text-red-400' : 'text-[var(--text-dim)]';
 
     return (
         <div className={clsx(
-            "relative p-5 rounded-xl border bg-[#16181e] transition-all hover:-translate-y-1",
+            "relative p-5 rounded-xl border bg-[var(--bg-card)] transition-all hover:-translate-y-1",
             colorStyles[color].split(' ').filter(c => c.startsWith('border') || c.startsWith('shadow')).join(' ')
         )}>
             {/* Glow effect */}
@@ -38,10 +38,10 @@ export function StatsCard({ label, value, unit, trend, trendText, trendUp, icon:
 
             <div className="flex justify-between items-start relative z-10">
                 <div>
-                    <p className="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">{label}</p>
+                    <p className="text-[var(--text-dim)] text-xs font-medium uppercase tracking-wider mb-1">{label}</p>
                     <div className="flex items-baseline">
-                        <h3 className="text-2xl font-bold text-white tracking-tight">{value}</h3>
-                        {unit && <span className="ml-1 text-slate-500 text-sm font-mono">{unit}</span>}
+                        <h3 className="text-2xl font-bold text-[var(--text-main)] tracking-tight">{value}</h3>
+                        {unit && <span className="ml-1 text-[var(--text-dim)] text-sm font-mono">{unit}</span>}
                     </div>
                 </div>
                 <div className={clsx("p-2 rounded-lg", colorStyles[color].split(' ').slice(0, 3).join(' '))}>

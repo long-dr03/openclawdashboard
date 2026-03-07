@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { LayoutDashboard, Cpu, Bot, Coins, Radio, HeartPulse, RotateCcw, CloudUpload, TrendingUp, Headset, Calendar, Mail, MailOpen, Send, Clock, Bell, Command, ChevronRight, Shield, Zap, MessageSquare, AlertTriangle, CheckCircle2, XCircle, ExternalLink, LogOut } from 'lucide-react';
 import { Terminal } from '@/components/Terminal';
 import { StatsCard } from '@/components/StatsCard';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 interface Agent {
     id: string;
@@ -113,20 +114,20 @@ export default function DashboardPage() {
             });
             const data = await res.json();
             if (data.success) {
-                const result = data.results?.[0];
-                if (result?.method === 'telegram' && result?.success) {
-                    setCmdResult(`✅ Sent to ${directTarget} via Telegram`);
-                } else if (result?.method === 'log-only') {
-                    setCmdResult(`⚠️ ${directTarget}: No Telegram token — logged only`);
+                // Kiểm tra kết quả cụ thể của agent mục tiêu
+                const agentResult = data.results?.find((r: any) => r.agentId === directTarget);
+                
+                if (agentResult?.success) {
+                    setCmdResult(`✅ Đã gửi tới ${directTarget} qua Telegram`);
+                    setDirectCmd('');
                 } else {
-                    setCmdResult(`❌ Failed: ${result?.error || 'Unknown error'}`);
+                    setCmdResult(`❌ Lỗi: ${agentResult?.error || 'Không thể gửi qua Telegram'}`);
                 }
-                setDirectCmd('');
             } else {
-                setCmdResult('❌ ' + (data.error || 'Failed'));
+                setCmdResult('❌ ' + (data.error || 'Yêu cầu thất bại'));
             }
         } catch (e: any) {
-            setCmdResult('❌ Network error');
+            setCmdResult('❌ Lỗi mạng hoặc server');
         } finally {
             setCmdSending(false);
             setTimeout(() => setCmdResult(''), 5000);
@@ -142,20 +143,21 @@ export default function DashboardPage() {
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <div className="flex items-center text-xs text-slate-500 mb-1">
+                    <div className="flex items-center text-xs text-[var(--text-dim)] mb-1">
                         <Shield size={12} className="mr-1" />
                         <span>Supreme AI Commander</span>
                         <span className="mx-2">/</span>
                         <span className="text-blue-400">Dashboard</span>
                     </div>
-                    <h1 className="text-2xl font-bold text-white flex items-center">
+                    <h1 className="text-2xl font-bold text-[var(--text-main)] flex items-center">
                         <LayoutDashboard size={28} className="mr-3 text-blue-400" />
                         CEO Command Center
                     </h1>
                 </div>
                 <div className="flex items-center space-x-4">
-                    <span className="text-xs text-slate-500">{today}</span>
-                    {mounted && <span className="px-3 py-1.5 bg-[#16181e] border border-white/5 rounded-lg text-sm text-slate-300 font-mono">{clock}</span>}
+                    <span className="text-xs text-[var(--text-dim)]">{today}</span>
+                    {mounted && <span className="px-3 py-1.5 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-lg text-sm text-[var(--text-main)] font-mono">{clock}</span>}
+                    <ThemeToggle />
                     <button 
                         onClick={handleLogout}
                         className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/20 transition-all cursor-pointer"
@@ -177,13 +179,13 @@ export default function DashboardPage() {
             {/* Row 1: Direct Command + Escalations */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 {/* Direct Command Panel */}
-                <div className="bg-[#16181e] border border-white/5 rounded-xl p-5">
-                    <h3 className="font-bold text-white text-sm flex items-center mb-4">
+                <div className="card-panel p-5">
+                    <h3 className="font-bold text-[var(--text-main)] text-sm flex items-center mb-4">
                         <Command size={16} className="mr-2 text-amber-400" /> Direct Command to Agent
                     </h3>
                     <div className="space-y-3" suppressHydrationWarning>
                         <select value={directTarget} onChange={e => setDirectTarget(e.target.value)}
-                            className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+                            className="w-full bg-[var(--bg-main)] border border-[var(--border-bright)] rounded-lg px-3 py-2 text-sm text-[var(--text-main)] focus:outline-none">
                             <option value="">-- Chọn agent --</option>
                             {agents.map(a => (
                                 <option key={a.id} value={a.id}>{a.name} ({a.id}) {a.telegramConnected ? '📱' : '⚠️'}</option>
@@ -193,35 +195,35 @@ export default function DashboardPage() {
                             <input type="text" value={directCmd} onChange={e => setDirectCmd(e.target.value)}
                                 placeholder="Enter command or message..."
                                 onKeyDown={e => e.key === 'Enter' && sendDirectCommand()}
-                                className="flex-1 bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-amber-500/50" />
+                                className="flex-1 bg-[var(--bg-main)] border border-[var(--border-bright)] rounded-lg px-3 py-2 text-sm text-[var(--text-main)] placeholder-[var(--text-dim)] focus:outline-none focus:border-amber-500/50" />
                             <button onClick={sendDirectCommand} disabled={cmdSending || !directTarget}
                                 className="px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-lg text-sm font-medium transition-colors border border-amber-500/20 disabled:opacity-30">
                                 <Send size={14} />
                             </button>
                         </div>
-                        {cmdResult && <p className="text-xs px-2 py-1.5 bg-black/20 rounded-lg">{cmdResult}</p>}
-                        <p className="text-[10px] text-slate-600">Sends directly via Telegram Bot API. Agent must have botToken configured.</p>
+                        {cmdResult && <p className="text-xs px-2 py-1.5 bg-[var(--bg-main)] rounded-lg">{cmdResult}</p>}
+                        <p className="text-[10px] text-[var(--text-dim)]">Sends directly via Telegram Bot API. Agent must have botToken configured.</p>
                     </div>
                 </div>
 
                 {/* Escalation Flow */}
-                <div className="bg-[#16181e] border border-white/5 rounded-xl p-5">
+                <div className="card-panel p-5">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-white text-sm flex items-center">
+                        <h3 className="font-bold text-[var(--text-main)] text-sm flex items-center">
                             <Bell size={16} className="mr-2 text-red-400" /> Escalation Feed
                         </h3>
                         <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">{escalations.filter(e => !e.resolved).length} open</span>
                     </div>
                     <div className="space-y-2">
                         {escalations.map(esc => (
-                            <div key={esc.id} className={`flex items-start space-x-3 px-3 py-2.5 rounded-lg ${esc.resolved ? 'bg-black/10 opacity-50' : 'bg-black/20'}`}>
+                            <div key={esc.id} className={`flex items-start space-x-3 px-3 py-2.5 rounded-lg ${esc.resolved ? 'bg-[var(--bg-main)]/50 opacity-50' : 'bg-[var(--bg-main)]'}`}>
                                 {esc.severity === 'warning' ? <AlertTriangle size={14} className="text-amber-400 mt-0.5 shrink-0" /> : esc.severity === 'info' ? <CheckCircle2 size={14} className="text-blue-400 mt-0.5 shrink-0" /> : <XCircle size={14} className="text-red-400 mt-0.5 shrink-0" />}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[10px] text-slate-500">{esc.from}</span>
-                                        <span className="text-[10px] text-slate-600">{esc.time}</span>
+                                        <span className="text-[10px] text-[var(--text-dim)]">{esc.from}</span>
+                                        <span className="text-[10px] text-[var(--text-dim)]">{esc.time}</span>
                                     </div>
-                                    <p className="text-xs text-slate-300 mt-0.5">{esc.msg}</p>
+                                    <p className="text-xs text-[var(--text-main)] mt-0.5">{esc.msg}</p>
                                 </div>
                             </div>
                         ))}
@@ -232,46 +234,46 @@ export default function DashboardPage() {
             {/* Row 2: Gmail + Calendar + Daily Reports */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                 {/* Gmail Widget */}
-                <div className="bg-[#16181e] border border-white/5 rounded-xl p-5">
+                <div className="card-panel p-5">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-white text-sm flex items-center">
+                        <h3 className="font-bold text-[var(--text-main)] text-sm flex items-center">
                             <Mail size={16} className="mr-2 text-red-400" /> Gmail Inbox
                         </h3>
                         <div className="flex items-center space-x-2">
                             <span className="text-xs px-2 py-0.5 rounded bg-red-500/10 text-red-400">{emails.filter(e => !e.read).length} new</span>
-                            <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 hover:text-white flex items-center">
+                            <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--text-dim)] hover:text-[var(--text-main)] flex items-center">
                                 Open <ExternalLink size={10} className="ml-1" />
                             </a>
                         </div>
                     </div>
                     <div className="space-y-2">
                         {emails.map(email => (
-                            <a href={`https://mail.google.com/mail/u/0/#inbox/${email.id}`} target="_blank" rel="noopener noreferrer" key={email.id} className={`block flex items-start space-x-3 px-3 py-2 rounded-lg cursor-pointer transition-colors hover:bg-white/5 ${!email.read ? 'bg-blue-500/5 border border-blue-500/10' : 'bg-black/20'}`}>
-                                {email.read ? <MailOpen size={14} className="text-slate-500 mt-0.5 shrink-0" /> : <Mail size={14} className="text-blue-400 mt-0.5 shrink-0" />}
+                            <a href={`https://mail.google.com/mail/u/0/#inbox/${email.id}`} target="_blank" rel="noopener noreferrer" key={email.id} className={`block flex items-start space-x-3 px-3 py-2 rounded-lg cursor-pointer transition-colors hover:bg-white/5 ${!email.read ? 'bg-blue-500/5 border border-blue-500/10' : 'bg-[var(--bg-main)]'}`}>
+                                {email.read ? <MailOpen size={14} className="text-[var(--text-dim)] mt-0.5 shrink-0" /> : <Mail size={14} className="text-blue-400 mt-0.5 shrink-0" />}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between">
-                                        <span className={`text-xs font-medium ${email.read ? 'text-slate-400' : 'text-white'}`}>{email.from}</span>
-                                        <span className="text-[10px] text-slate-600 shrink-0">{email.time}</span>
+                                        <span className={`text-xs font-medium ${email.read ? 'text-[var(--text-dim)]' : 'text-[var(--text-main)]'}`}>{email.from}</span>
+                                        <span className="text-[10px] text-[var(--text-dim)] shrink-0">{email.time}</span>
                                     </div>
-                                    <p className="text-[11px] text-slate-500 truncate mt-0.5">{email.subject}</p>
+                                    <p className="text-[11px] text-[var(--text-dim)] truncate mt-0.5">{email.subject}</p>
                                 </div>
                             </a>
                         ))}
-                        {emails.length === 0 && !googleError && <p className="text-xs text-center py-4 text-slate-600">No recent emails</p>}
+                        {emails.length === 0 && !googleError && <p className="text-xs text-center py-4 text-[var(--text-dim)]">No recent emails</p>}
                         {googleError && <p className="text-xs text-center py-4 text-red-400">Connection Failed (Check Settings)</p>}
                     </div>
-                    <p className="text-[10px] text-slate-600 mt-3 pt-2 border-t border-white/5">📌 <a href="/settings" className="hover:text-blue-400 underline">Configure Google Integrations</a></p>
+                    <p className="text-[10px] text-[var(--text-dim)] mt-3 pt-2 border-t border-[var(--border-main)]">📌 <a href="/settings" className="hover:text-blue-400 underline">Configure Google Integrations</a></p>
                 </div>
 
                 {/* Calendar Widget */}
-                <div className="bg-[#16181e] border border-white/5 rounded-xl p-5">
+                <div className="card-panel p-5">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-white text-sm flex items-center">
+                        <h3 className="font-bold text-[var(--text-main)] text-sm flex items-center">
                             <Calendar size={16} className="mr-2 text-purple-400" /> Lịch CEO
                         </h3>
                         <div className="flex items-center space-x-2">
-                            <span className="text-xs text-slate-500">{calendarEvents.length} events</span>
-                            <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 hover:text-white flex items-center">
+                            <span className="text-xs text-[var(--text-dim)]">{calendarEvents.length} events</span>
+                            <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--text-dim)] hover:text-[var(--text-main)] flex items-center">
                                 Open <ExternalLink size={10} className="ml-1" />
                             </a>
                         </div>
@@ -283,36 +285,36 @@ export default function DashboardPage() {
                             const isPast = now > evtHour;
                             const isCurrent = now === evtHour;
                             return (
-                                <a href={evt.htmlLink || 'https://calendar.google.com'} target="_blank" rel="noopener noreferrer" key={idx} className={`block flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors hover:bg-white/5 ${isCurrent ? 'bg-purple-500/10 border border-purple-500/20' : isPast ? 'bg-black/10 opacity-50' : 'bg-black/20'}`}>
-                                    <span className={`text-xs font-mono shrink-0 ${isCurrent ? 'text-purple-400 font-bold' : 'text-slate-500'}`}>{evt.time}</span>
+                                <a href={evt.htmlLink || 'https://calendar.google.com'} target="_blank" rel="noopener noreferrer" key={idx} className={`block flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors hover:bg-white/5 ${isCurrent ? 'bg-purple-500/10 border border-purple-500/20' : isPast ? 'bg-[var(--bg-main)]/50 opacity-50' : 'bg-[var(--bg-main)]'}`}>
+                                    <span className={`text-xs font-mono shrink-0 ${isCurrent ? 'text-purple-400 font-bold' : 'text-[var(--text-dim)]'}`}>{evt.time}</span>
                                     <div className="flex-1 min-w-0">
-                                        <p className={`text-xs truncate ${isCurrent ? 'text-white font-medium' : 'text-slate-400'}`}>{evt.title}</p>
+                                        <p className={`text-xs truncate ${isCurrent ? 'text-[var(--text-main)] font-medium' : 'text-[var(--text-dim)]'}`}>{evt.title}</p>
                                     </div>
                                     {isCurrent && <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>}
                                 </a>
                             );
                         })}
-                        {calendarEvents.length === 0 && <p className="text-xs text-center py-4 text-slate-600">No events today</p>}
+                        {calendarEvents.length === 0 && <p className="text-xs text-center py-4 text-[var(--text-dim)]">No events today</p>}
                     </div>
-                    <p className="text-[10px] text-slate-600 mt-3 pt-2 border-t border-white/5">📌 <a href="/settings" className="hover:text-blue-400 underline">Configure Google Integrations</a></p>
+                    <p className="text-[10px] text-[var(--text-dim)] mt-3 pt-2 border-t border-[var(--border-main)]">📌 <a href="/settings" className="hover:text-blue-400 underline">Configure Google Integrations</a></p>
                 </div>
 
                 {/* Daily Reports */}
-                <div className="bg-[#16181e] border border-white/5 rounded-xl p-5">
+                <div className="card-panel p-5">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-white text-sm flex items-center">
+                        <h3 className="font-bold text-[var(--text-main)] text-sm flex items-center">
                             <Clock size={16} className="mr-2 text-cyan-400" /> Daily Reports
                         </h3>
                     </div>
                     <div className="space-y-2">
                         {reports.map((rpt, idx) => (
-                            <div key={idx} className="bg-black/20 rounded-lg p-3">
+                            <div key={idx} className="bg-[var(--bg-main)] rounded-lg p-3">
                                 <div className="flex items-center justify-between mb-1">
-                                    <span className="text-xs font-mono text-slate-400">{rpt.time}</span>
-                                    <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${rpt.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-500/20 text-slate-500'}`}>{rpt.status}</span>
+                                    <span className="text-xs font-mono text-[var(--text-dim)]">{rpt.time}</span>
+                                    <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${rpt.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-500/20 text-[var(--text-dim)]'}`}>{rpt.status}</span>
                                 </div>
-                                <p className="text-xs font-medium text-white">{rpt.title}</p>
-                                <p className="text-[10px] text-slate-500 mt-1">{rpt.summary}</p>
+                                <p className="text-xs font-medium text-[var(--text-main)]">{rpt.title}</p>
+                                <p className="text-[10px] text-[var(--text-dim)] mt-1">{rpt.summary}</p>
                             </div>
                         ))}
                     </div>
@@ -322,63 +324,63 @@ export default function DashboardPage() {
             {/* Row 3: Agent Fleet + Telegram Sessions */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 {/* Agent Fleet */}
-                <div className="bg-[#16181e] border border-white/5 rounded-xl p-5">
+                <div className="card-panel p-5">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-white text-sm flex items-center">
+                        <h3 className="font-bold text-[var(--text-main)] text-sm flex items-center">
                             <Bot size={16} className="mr-2 text-blue-400" /> Agent Fleet
                         </h3>
                         <a href="/agents" className="text-xs text-blue-400 hover:underline flex items-center">Manage <ChevronRight size={12} /></a>
                     </div>
                     <div className="space-y-2">
                         {agents.length > 0 ? agents.map(agent => (
-                            <div key={agent.id} className="flex items-center justify-between px-3 py-2.5 bg-black/20 rounded-lg">
+                            <div key={agent.id} className="flex items-center justify-between px-3 py-2.5 bg-[var(--bg-main)] rounded-lg">
                                 <div className="flex items-center">
                                     <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center mr-3">
                                         <Bot size={14} className="text-blue-400" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-white">{agent.name}</p>
-                                        <p className="text-[10px] text-slate-500">{agent.role} · {agent.model} {agent.telegramConnected ? '· 📱 TG' : ''}</p>
+                                        <p className="text-sm font-medium text-[var(--text-main)]">{agent.name}</p>
+                                        <p className="text-[10px] text-[var(--text-dim)]">{agent.role} · {agent.model} {agent.telegramConnected ? '· 📱 TG' : ''}</p>
                                     </div>
                                 </div>
                                 <span className={`w-2 h-2 rounded-full ${agent.enabled !== false ? 'bg-emerald-400' : 'bg-slate-600'}`}></span>
                             </div>
                         )) : (
-                            <p className="text-sm text-slate-500 text-center py-4">Loading agents...</p>
+                            <p className="text-sm text-[var(--text-dim)] text-center py-4">Loading agents...</p>
                         )}
                     </div>
                 </div>
 
                 {/* Service Status Mini */}
-                <div className="bg-[#16181e] border border-white/5 rounded-xl p-5">
+                <div className="card-panel p-5">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-white text-sm flex items-center">
+                        <h3 className="font-bold text-[var(--text-main)] text-sm flex items-center">
                             <HeartPulse size={16} className="mr-2 text-emerald-400" /> Infrastructure Health
                         </h3>
                         <a href="/devops" className="text-xs text-blue-400 hover:underline flex items-center">Details <ChevronRight size={12} /></a>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                         {services.map((svc, idx) => (
-                            <div key={idx} className="flex items-center space-x-2 px-3 py-2 bg-black/20 rounded-lg">
-                                {svc.status === 'online' ? <CheckCircle2 size={12} className="text-emerald-400" /> : svc.status === 'offline' ? <XCircle size={12} className="text-red-400" /> : <AlertTriangle size={12} className="text-slate-500" />}
-                                <span className="text-xs text-slate-300">{svc.name}</span>
+                            <div key={idx} className="flex items-center space-x-2 px-3 py-2 bg-[var(--bg-main)] rounded-lg">
+                                {svc.status === 'online' ? <CheckCircle2 size={12} className="text-emerald-400" /> : svc.status === 'offline' ? <XCircle size={12} className="text-red-400" /> : <AlertTriangle size={12} className="text-[var(--text-dim)]" />}
+                                <span className="text-xs text-[var(--text-main)]">{svc.name}</span>
                             </div>
                         ))}
-                        {services.length === 0 && <p className="col-span-2 text-center py-4 text-slate-600 text-xs">Loading...</p>}
+                        {services.length === 0 && <p className="col-span-2 text-center py-4 text-[var(--text-dim)] text-xs">Loading...</p>}
                     </div>
                     {systemStats && (
-                        <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-white/5">
+                        <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-[var(--border-main)]">
                             <div className="text-center">
-                                <p className="text-xs font-bold text-white">{systemStats?.cpu?.usage || 0}%</p>
-                                <p className="text-[10px] text-slate-500">CPU</p>
+                                <p className="text-xs font-bold text-[var(--text-main)]">{systemStats?.cpu?.usage || 0}%</p>
+                                <p className="text-[10px] text-[var(--text-dim)]">CPU</p>
                             </div>
                             <div className="text-center">
-                                <p className="text-xs font-bold text-white">{systemStats?.ram?.usagePercent || 0}%</p>
-                                <p className="text-[10px] text-slate-500">RAM</p>
+                                <p className="text-xs font-bold text-[var(--text-main)]">{systemStats?.ram?.usagePercent || 0}%</p>
+                                <p className="text-[10px] text-[var(--text-dim)]">RAM</p>
                             </div>
                             <div className="text-center">
-                                <p className="text-xs font-bold text-white">{systemStats?.disk?.usagePercent || 0}%</p>
-                                <p className="text-[10px] text-slate-500">Disk</p>
+                                <p className="text-xs font-bold text-[var(--text-main)]">{systemStats?.disk?.usagePercent || 0}%</p>
+                                <p className="text-[10px] text-[var(--text-dim)]">Disk</p>
                             </div>
                         </div>
                     )}
