@@ -46,30 +46,25 @@ export default function DashboardPage() {
 
     // Gmail and Calendar
     const [emails, setEmails] = useState<any[]>([]);
+    const [showAllEmails, setShowAllEmails] = useState(false);
     const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
     const [googleError, setGoogleError] = useState(false);
-
-    // Escalation log (would come from DevOps → CEO alert system)
-    const [escalations] = useState([
-        { id: 1, from: 'DevOps Agent', severity: 'warning', msg: 'Sales Bot — Telegram token trống, không thể nhận tin', time: '12:30', resolved: false },
-        { id: 2, from: 'DevOps Agent', severity: 'warning', msg: 'DevOps Bot — Telegram token trống', time: '12:30', resolved: false },
-        { id: 3, from: 'System', severity: 'info', msg: 'Gateway health check OK — uptime 3d 4h', time: '11:00', resolved: true },
-    ]);
-
-    // Daily reports
-    const [reports] = useState([
-        { time: '08:00', title: 'Morning Briefing', status: 'completed', summary: 'Tất cả agent online. CEO: 70K tokens. Sales & DevOps idle 4 ngày.' },
-        { time: '12:00', title: 'Midday Check', status: 'pending', summary: 'Waiting for scheduled time...' },
-        { time: '20:00', title: 'Evening Summary', status: 'pending', summary: 'Waiting for scheduled time...' },
-    ]);
+    const [escalations, setEscalations] = useState<any[]>([]);
+    const [showAllEscalations, setShowAllEscalations] = useState(false);
+    const [reports, setReports] = useState<any[]>([]);
 
     const fetchData = useCallback(async () => {
         try {
-            const [agentRes, svcRes, sysRes] = await Promise.all([
+            const [agentRes, svcRes, sysRes, escRes, rptRes] = await Promise.all([
                 fetch('/api/agents'),
                 fetch('/api/devops/services').catch(() => null),
                 fetch('/api/devops/system').catch(() => null),
+                fetch('/api/escalations').catch(() => null),
+                fetch('/api/reports').catch(() => null),
             ]);
+
+            if (escRes) { const esc = await escRes.json(); if (Array.isArray(esc)) setEscalations(esc); }
+            if (rptRes) { const rpt = await rptRes.json(); if (Array.isArray(rpt)) setReports(rpt); }
 
             // Gmail & Calendar (lazy load)
             fetch('/api/google/gmail').then(res => res.json()).then(data => {
@@ -215,7 +210,7 @@ export default function DashboardPage() {
                         <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">{escalations.filter(e => !e.resolved).length} open</span>
                     </div>
                     <div className="space-y-2">
-                        {escalations.map(esc => (
+                        {escalations.slice(0, showAllEscalations ? undefined : 4).map(esc => (
                             <div key={esc.id} className={`flex items-start space-x-3 px-3 py-2.5 rounded-lg ${esc.resolved ? 'bg-[var(--bg-main)]/50 opacity-50' : 'bg-[var(--bg-main)]'}`}>
                                 {esc.severity === 'warning' ? <AlertTriangle size={14} className="text-amber-400 mt-0.5 shrink-0" /> : esc.severity === 'info' ? <CheckCircle2 size={14} className="text-blue-400 mt-0.5 shrink-0" /> : <XCircle size={14} className="text-red-400 mt-0.5 shrink-0" />}
                                 <div className="flex-1 min-w-0">
@@ -227,12 +222,20 @@ export default function DashboardPage() {
                                 </div>
                             </div>
                         ))}
+                        {escalations.length > 4 && (
+                            <button 
+                                onClick={() => setShowAllEscalations(!showAllEscalations)}
+                                className="w-full py-2 text-[10px] text-blue-400 hover:text-blue-300 font-bold uppercase tracking-widest transition-colors"
+                            >
+                                {showAllEscalations ? 'Thu gọn ↑' : `Xem thêm ${escalations.length - 4} cảnh báo ↓`}
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
 
-            {/* Row 2: Gmail + Calendar + Daily Reports */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            {/* Row 2: Gmail + Daily Reports */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 {/* Gmail Widget */}
                 <div className="card-panel p-5">
                     <div className="flex items-center justify-between mb-4">
@@ -247,7 +250,7 @@ export default function DashboardPage() {
                         </div>
                     </div>
                     <div className="space-y-2">
-                        {emails.map(email => (
+                        {emails.slice(0, showAllEmails ? undefined : 4).map(email => (
                             <a href={`https://mail.google.com/mail/u/0/#inbox/${email.id}`} target="_blank" rel="noopener noreferrer" key={email.id} className={`block flex items-start space-x-3 px-3 py-2 rounded-lg cursor-pointer transition-colors hover:bg-white/5 ${!email.read ? 'bg-blue-500/5 border border-blue-500/10' : 'bg-[var(--bg-main)]'}`}>
                                 {email.read ? <MailOpen size={14} className="text-[var(--text-dim)] mt-0.5 shrink-0" /> : <Mail size={14} className="text-blue-400 mt-0.5 shrink-0" />}
                                 <div className="flex-1 min-w-0">
@@ -259,42 +262,16 @@ export default function DashboardPage() {
                                 </div>
                             </a>
                         ))}
+                        {emails.length > 4 && (
+                            <button 
+                                onClick={() => setShowAllEmails(!showAllEmails)}
+                                className="w-full py-2 text-[10px] text-blue-400 hover:text-blue-300 font-bold uppercase tracking-widest transition-colors"
+                            >
+                                {showAllEmails ? 'Thu gọn ↑' : `Xem thêm ${emails.length - 4} email ↓`}
+                            </button>
+                        )}
                         {emails.length === 0 && !googleError && <p className="text-xs text-center py-4 text-[var(--text-dim)]">No recent emails</p>}
                         {googleError && <p className="text-xs text-center py-4 text-red-400">Connection Failed (Check Settings)</p>}
-                    </div>
-                    <p className="text-[10px] text-[var(--text-dim)] mt-3 pt-2 border-t border-[var(--border-main)]">📌 <a href="/settings" className="hover:text-blue-400 underline">Configure Google Integrations</a></p>
-                </div>
-
-                {/* Calendar Widget */}
-                <div className="card-panel p-5">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-[var(--text-main)] text-sm flex items-center">
-                            <Calendar size={16} className="mr-2 text-purple-400" /> Lịch CEO
-                        </h3>
-                        <div className="flex items-center space-x-2">
-                            <span className="text-xs text-[var(--text-dim)]">{calendarEvents.length} events</span>
-                            <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--text-dim)] hover:text-[var(--text-main)] flex items-center">
-                                Open <ExternalLink size={10} className="ml-1" />
-                            </a>
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        {calendarEvents.map((evt, idx) => {
-                            const now = mounted ? new Date().getHours() : 0;
-                            const evtHour = parseInt(evt.time.split(':')[0]);
-                            const isPast = now > evtHour;
-                            const isCurrent = now === evtHour;
-                            return (
-                                <a href={evt.htmlLink || 'https://calendar.google.com'} target="_blank" rel="noopener noreferrer" key={idx} className={`block flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors hover:bg-white/5 ${isCurrent ? 'bg-purple-500/10 border border-purple-500/20' : isPast ? 'bg-[var(--bg-main)]/50 opacity-50' : 'bg-[var(--bg-main)]'}`}>
-                                    <span className={`text-xs font-mono shrink-0 ${isCurrent ? 'text-purple-400 font-bold' : 'text-[var(--text-dim)]'}`}>{evt.time}</span>
-                                    <div className="flex-1 min-w-0">
-                                        <p className={`text-xs truncate ${isCurrent ? 'text-[var(--text-main)] font-medium' : 'text-[var(--text-dim)]'}`}>{evt.title}</p>
-                                    </div>
-                                    {isCurrent && <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>}
-                                </a>
-                            );
-                        })}
-                        {calendarEvents.length === 0 && <p className="text-xs text-center py-4 text-[var(--text-dim)]">No events today</p>}
                     </div>
                     <p className="text-[10px] text-[var(--text-dim)] mt-3 pt-2 border-t border-[var(--border-main)]">📌 <a href="/settings" className="hover:text-blue-400 underline">Configure Google Integrations</a></p>
                 </div>

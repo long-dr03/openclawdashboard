@@ -20,33 +20,41 @@ export async function GET(req: Request) {
         const endOfDay = new Date();
         endOfDay.setHours(23, 59, 59, 999);
 
-        const res = await calendar.events.list({
-            calendarId: 'primary',
-            timeMin: now.toISOString(),
-            timeMax: endOfDay.toISOString(),
-            maxResults: 10,
-            singleEvents: true,
-            orderBy: 'startTime',
-        });
+        try {
+            const res = await calendar.events.list({
+                calendarId: 'primary',
+                timeMin: now.toISOString(),
+                timeMax: endOfDay.toISOString(),
+                maxResults: 15,
+                singleEvents: true,
+                orderBy: 'startTime',
+            });
 
-        const events = (res.data.items || []).map(event => {
-            const start = event.start?.dateTime || event.start?.date;
-            let time = 'All Day';
-            if (event.start?.dateTime) {
-                const d = new Date(event.start.dateTime);
-                time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const events = (res.data.items || []).map(event => {
+                const start = event.start?.dateTime || event.start?.date;
+                let time = 'All Day';
+                if (event.start?.dateTime) {
+                    const d = new Date(event.start.dateTime);
+                    time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+
+                return {
+                    id: event.id,
+                    title: event.summary || '(No Title)',
+                    time,
+                    link: event.htmlLink,
+                    type: 'meeting',
+                };
+            });
+
+            return NextResponse.json(events);
+        } catch (apiErr: any) {
+            console.error('Calendar API Error Detail:', apiErr);
+            if (apiErr.message?.includes('invalid_grant')) {
+                return NextResponse.json({ error: 'Google session expired. Please reconnect.', needsAuth: true }, { status: 401 });
             }
-
-            return {
-                id: event.id,
-                title: event.summary || '(No Title)',
-                time,
-                link: event.htmlLink,
-                type: 'meeting',
-            };
-        });
-
-        return NextResponse.json(events);
+            throw apiErr;
+        }
     } catch (e: any) {
         console.error('Calendar API Error:', e);
         return NextResponse.json({ error: e.message, events: [] });

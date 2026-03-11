@@ -15,6 +15,7 @@ interface Mission {
 
 export default function TasksPage() {
     const [missions, setMissions] = useState<Mission[]>([]);
+    const [agents, setAgents] = useState<{ id: string, name: string }[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [newTitle, setNewTitle] = useState('');
@@ -35,7 +36,20 @@ export default function TasksPage() {
         }
     }, []);
 
-    useEffect(() => { fetchTasks(); }, [fetchTasks]);
+    const fetchAgents = useCallback(async () => {
+        try {
+            const res = await fetch('/api/agents');
+            const data = await res.json();
+            if (Array.isArray(data)) setAgents(data);
+        } catch (e) {
+            console.error('Failed to fetch agents', e);
+        }
+    }, []);
+
+    useEffect(() => { 
+        fetchTasks();
+        fetchAgents();
+    }, [fetchTasks, fetchAgents]);
 
     const moveTask = async (taskId: number, newStatus: Mission['status']) => {
         try {
@@ -217,9 +231,9 @@ export default function TasksPage() {
                                     <label className="text-xs text-[var(--text-dim)] mb-1 block">Assign Agent</label>
                                     <select value={newAgent} onChange={e => setNewAgent(e.target.value)}
                                         className="w-full bg-[var(--bg-input)] border border-[var(--border-bright)] rounded-lg px-3 py-2.5 text-sm text-[var(--text-main)] focus:outline-none">
-                                        <option value="ceo">CEO Agent</option>
-                                        <option value="devops">DevOps Agent</option>
-                                        <option value="sales">Sales Agent</option>
+                                        {agents.map(a => (
+                                            <option key={a.id} value={a.id}>{a.name} ({a.id})</option>
+                                        ))}
                                     </select>
                                 </div>
                             </div>

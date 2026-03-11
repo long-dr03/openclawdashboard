@@ -22,6 +22,8 @@ export default function CEOCenterPage() {
     const [newsConfig, setNewsConfig] = useState<Record<string, boolean>>(
         NEWS_CATEGORIES.reduce((acc, cat) => ({ ...acc, [cat]: true }), {})
     );
+    const [customTopic, setCustomTopic] = useState('');
+    const [customTopics, setCustomTopics] = useState<string[]>([]);
     const [skills, setSkills] = useState(CEO_SKILLS);
     const [toast, setToast] = useState<{ type: string; msg: string } | null>(null);
     const [newsLoading, setNewsLoading] = useState(false);
@@ -29,6 +31,18 @@ export default function CEOCenterPage() {
 
     const toggleNews = (cat: string) => {
         setNewsConfig(prev => ({ ...prev, [cat]: !prev[cat] }));
+    };
+
+    const addCustomTopic = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (customTopic.trim() && !customTopics.includes(customTopic.trim())) {
+            setCustomTopics([...customTopics, customTopic.trim()]);
+            setCustomTopic('');
+        }
+    };
+
+    const removeCustomTopic = (topic: string) => {
+        setCustomTopics(customTopics.filter(t => t !== topic));
     };
 
     const toggleSkill = (id: string) => {
@@ -39,7 +53,10 @@ export default function CEOCenterPage() {
         setNewsLoading(true);
         setNewsResult(null);
         try {
-            const activeTags = Object.keys(newsConfig).filter(k => newsConfig[k]);
+            const activeTags = [
+                ...Object.keys(newsConfig).filter(k => newsConfig[k]),
+                ...customTopics
+            ];
             const res = await fetch('/api/ceo/news-now', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -117,6 +134,32 @@ export default function CEOCenterPage() {
                                 </button>
                             </div>
                         ))}
+
+                        {/* Custom Topics UI */}
+                        {customTopics.map(topic => (
+                            <div key={topic} className="flex items-center justify-between p-3 rounded-lg bg-[var(--bg-main)] border border-blue-600/20">
+                                <span className="text-sm text-blue-400 font-medium">{topic}</span>
+                                <button onClick={() => removeCustomTopic(topic)} className="text-red-400 hover:text-red-300 transition-colors">
+                                    <ToggleRight size={24} />
+                                </button>
+                            </div>
+                        ))}
+
+                        <form onSubmit={addCustomTopic} className="mt-4 flex gap-2">
+                            <input
+                                type="text"
+                                value={customTopic}
+                                onChange={(e) => setCustomTopic(e.target.value)}
+                                placeholder="Thêm chủ đề riêng..."
+                                className="flex-1 px-3 py-2 bg-[var(--bg-main)] border border-[var(--border-main)] rounded-lg text-sm text-[var(--text-main)] focus:outline-none focus:border-blue-600/50"
+                            />
+                            <button 
+                                type="submit"
+                                className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-500 transition-all"
+                            >
+                                Thêm
+                            </button>
+                        </form>
                     </div>
 
                     {/* News Result Display */}

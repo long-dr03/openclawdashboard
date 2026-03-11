@@ -13,6 +13,28 @@ interface TimelineEvent {
 export default function TimelinePage() {
     const [filter, setFilter] = useState('all');
     const [now, setNow] = useState<number>(0);
+    const [events, setEvents] = useState<TimelineEvent[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetchEvents = async () => {
+        try {
+            const res = await fetch('/api/timeline');
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                setEvents(data.map(e => ({ ...e, time: new Date(e.time) })));
+            }
+        } catch (e) {
+            console.error('Failed to fetch events', e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchEvents();
+        const interval = setInterval(fetchEvents, 30000);
+        return () => clearInterval(interval);
+    }, []);
 
     // Initialize 'now' on mount to avoid hydration mismatch and purity errors
     useEffect(() => {
@@ -26,19 +48,6 @@ export default function TimelinePage() {
             clearInterval(interval);
         };
     }, []);
-
-    const events: TimelineEvent[] = useMemo(() => {
-        if (now === 0) return [];
-        return [
-            { type: 'system' as const, title: 'Gateway khởi động', desc: 'OpenClaw Gateway started on port 18789 — v2026.2.6-3', time: new Date(now - 7200000) },
-            { type: 'agent' as const, title: 'CEO Agent online', desc: 'Model: gemini-3-pro-high — Session 608e7c42 — 70,266 tokens', time: new Date(now - 3600000) },
-            { type: 'agent' as const, title: 'Sales Agent — phiên cuối', desc: 'Model: gemini-2.5-flash-lite — User: @rurimeiko — 28,650 tokens', time: new Date(now - 86400000 * 4) },
-            { type: 'agent' as const, title: 'DevOps Agent — phiên cuối', desc: 'Model: gemini-2.5-flash-lite — User: @rurimeiko — 14,293 tokens', time: new Date(now - 86400000 * 4) },
-            { type: 'task' as const, title: 'Dashboard Canvas UI deploy', desc: 'CEO Dashboard v4.1 deployed via ngrok', time: new Date(now - 600000) },
-            { type: 'system' as const, title: 'PM2 Process mon', desc: 'my-openclaw-bot uptime 3d 4h — memory 125MB — CPU 2.1%', time: new Date(now - 1800000) },
-            { type: 'broadcast' as const, title: 'Test Broadcast', desc: 'System test broadcast to all agents', time: new Date(now - 18000000) },
-        ].sort((a, b) => b.time.getTime() - a.time.getTime());
-    }, [now]);
 
     const filtered = filter === 'all' ? events : events.filter(e => e.type === filter);
 

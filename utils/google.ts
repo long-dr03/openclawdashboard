@@ -75,6 +75,14 @@ export function getOAuthClient() {
         oAuth2Client.setCredentials(config.tokens);
     }
 
+    // Save refreshed tokens automatically
+    oAuth2Client.on('tokens', (tokens) => {
+        saveGoogleTokens({
+            ...config.tokens,
+            ...tokens
+        });
+    });
+
     return oAuth2Client;
 }
 
